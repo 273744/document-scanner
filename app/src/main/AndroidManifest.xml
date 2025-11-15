@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Camera permission for document capture -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
+    <!-- Storage permissions for saving and reading documents -->
+    <!-- For Android 10 (API 29) and below -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+
+    <!-- For Android 13 (API 33) and above - Granular media permissions -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
+    <!-- Internet permission for future cloud features -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Optional: Access network state for checking connectivity -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MyApplication">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.MyApplication">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Camera Activity for document capture -->
+        <activity
+            android:name=".CameraActivity"
+            android:exported="false"
+            android:label="Capture Document"
+            android:parentActivityName=".MainActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.MyApplication">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".MainActivity" />
+        </activity>
+
+        <!-- Image Crop Activity for manual document cropping -->
+        <activity
+            android:name=".ImageCropActivity"
+            android:exported="false"
+            android:label="Crop Document"
+            android:parentActivityName=".CameraActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.MyApplication">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".CameraActivity" />
+        </activity>
+
+        <!-- Preview Activity for image enhancement -->
+        <activity
+            android:name=".PreviewActivity"
+            android:exported="false"
+            android:label="Enhance Document"
+            android:parentActivityName=".CameraActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.MyApplication">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".CameraActivity" />
+        </activity>
+
+        <!-- Multi-Page Activity for combining multiple documents -->
+        <activity
+            android:name=".MultiPageActivity"
+            android:exported="false"
+            android:label="Multi-Page Document"
+            android:parentActivityName=".MainActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.MyApplication">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".MainActivity" />
+        </activity>
+
+        <!-- Gallery Activity for viewing captured documents -->
+        <activity
+            android:name=".GalleryActivity"
+            android:exported="false"
+            android:label="Document Gallery"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/Theme.MyApplication">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".MainActivity" />
+        </activity>
+
+        <!-- FileProvider for sharing PDFs -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_provider_paths" />
+        </provider>
+
+    </application>
+
+</manifest>

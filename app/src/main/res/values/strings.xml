@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">Document Scanner</string>
+    <string name="capture_document">Capture Document</string>
+    <string name="view_gallery">View Gallery</string>
+    <string name="document_preview">Document Preview</string>
+    <string name="no_document_preview">No document captured yet</string>
+    <string name="camera_permission_required">Camera permission is required to capture documents</string>
+    <string name="permission_denied">Permission denied. Please enable it in Settings.</string>
+    <string name="capturing_document">Opening camera to capture document...</string>
+    <string name="opening_gallery">Opening gallery...</string>
+    <string name="no_documents_available">No documents available</string>
+
+    <!-- Camera Activity Strings -->
+    <string name="back_button">Back</string>
+    <string name="flash_toggle">Toggle Flash</string>
+    <string name="open_gallery">Open Gallery</string>
+    <string name="last_captured_image">Last captured image</string>
+    <string name="processing_image">Processing image...</string>
+    <string name="align_document_hint">Align document within the frame</string>
+
+    <!-- Image Crop Activity Strings -->
+    <string name="crop_instructions">Drag corners to adjust crop area</string>
+    <string name="cancel">Cancel</string>
+    <string name="reset">Reset</string>
+    <string name="crop">Crop</string>
+    <string name="processing">Processing...</string>
+
+    <!-- Preview Activity Strings -->
+    <string name="enhance_image">Enhance Image</string>
+    <string name="save">Save</string>
+    <string name="pdf">PDF</string>
+    <string name="original">Original</string>
+    <string name="filter_preview">Filter Preview</string>
+</resources>

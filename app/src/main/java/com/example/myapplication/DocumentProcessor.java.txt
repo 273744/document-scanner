@@ -1,0 +1,470 @@
+package com.example.myapplication;
+
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Log;
+
+import org.opencv.android.Utils;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.Point;
+import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
+/**
+ * DocumentProcessor - Advanced document edge detection and processing
+ * Uses OpenCV for automatic document boundary detection
+ */
+public class DocumentProcessor {
+
+    private static final String TAG = "DocumentProcessor";
+
+    // Edge detection parameters
+    private static final double CANNY_THRESHOLD_1 = 50.0;
+    private static final double CANNY_THRESHOLD_2 = 150.0;
+    private static final int GAUSSIAN_BLUR_SIZE = 5;
+    private static final double EPSILON_MULTIPLIER = 0.02;
+    private static final double MIN_CONTOUR_AREA_RATIO = 0.1; // 10% of image area
+
+    /**
+     * Process image from file path and detect document edges
+     *
+     * @param imagePath Path to the image file
+     * @return DocumentEdges object containing corner points, or null if detection fails
+     */
+    public static DocumentEdges processImageFromPath(String imagePath) {
+        // Validate input
+        if (imagePath == null || imagePath.isEmpty()) {
+            Log.e(TAG, "Invalid image path");
+            return null;
+        }
+
+        File imageFile = new File(imagePath);
+        if (!imageFile.exists()) {
+            Log.e(TAG, "Image file does not exist: " + imagePath);
+            return null;
+        }
+
+        try {
+            // Load image from file
+            Bitmap bitmap = BitmapFactory.decodeFile(imagePath);
+            if (bitmap == null) {
+                Log.e(TAG, "Failed to decode image from path: " + imagePath);
+                return null;
+            }
+
+            // Process the bitmap
+            DocumentEdges edges = processImage(bitmap);
+
+            // Don't recycle the bitmap here as it might be used elsewhere
+            return edges;
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error processing image from path: " + imagePath, e);
+            return null;
+        }
+    }
+
+    /**
+     * Process bitmap and detect document edges
+     *
+     * @param inputBitmap Input bitmap image
+     * @return DocumentEdges object containing corner points, or null if detection fails
+     */
+    public static DocumentEdges processImage(Bitmap inputBitmap) {
+        // Validate input
+        if (inputBitmap == null) {
+            Log.e(TAG, "Input bitmap is null");
+            return null;
+        }
+
+        if (!OpenCVHelper.isInitialized()) {
+            Log.e(TAG, "OpenCV is not initialized");
+            return null;
+        }
+
+        Mat originalMat = null;
+        Mat grayMat = null;
+        Mat blurredMat = null;
+        Mat edgesMat = null;
+
+        try {
+            // Step 1: Load image and convert to Mat
+            originalMat = new Mat();
+            Utils.bitmapToMat(inputBitmap, originalMat);
+
+            Log.d(TAG, "Image loaded: " + originalMat.width() + "x" + originalMat.height());
+
+            // Step 2: Convert to grayscale
+            grayMat = convertToGrayscale(originalMat);
+            if (grayMat == null) {
+                Log.e(TAG, "Failed to convert to grayscale");
+                return null;
+            }
+
+            // Step 3: Apply Gaussian blur to reduce noise
+            blurredMat = applyGaussianBlur(grayMat);
+            if (blurredMat == null) {
+                Log.e(TAG, "Failed to apply Gaussian blur");
+                return null;
+            }
+
+            // Step 4: Use Canny edge detection
+            edgesMat = applyCannyEdgeDetection(blurredMat);
+            if (edgesMat == null) {
+                Log.e(TAG, "Failed to apply Canny edge detection");
+                return null;
+            }
+
+            // Step 5: Find contours and detect rectangular shapes
+            List<MatOfPoint> contours = findContours(edgesMat);
+            if (contours == null || contours.isEmpty()) {
+                Log.w(TAG, "No contours found");
+                return null;
+            }
+
+            Log.d(TAG, "Found " + contours.size() + " contours");
+
+            // Step 6: Return largest rectangular contour as document edges
+            List<Point> documentCorners = findLargestRectangle(contours, originalMat.size());
+
+            if (documentCorners != null && documentCorners.size() == 4) {
+                Log.d(TAG, "Document edges detected successfully");
+                return new DocumentEdges(documentCorners, inputBitmap.getWidth(), inputBitmap.getHeight());
+            } else {
+                Log.w(TAG, "No valid rectangular document found");
+                return null;
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error processing image", e);
+            return null;
+        } finally {
+            // Clean up resources
+            if (originalMat != null) originalMat.release();
+            if (grayMat != null) grayMat.release();
+            if (blurredMat != null) blurredMat.release();
+            if (edgesMat != null) edgesMat.release();
+        }
+    }
+
+    /**
+     * Step 2: Convert image to grayscale
+     */
+    private static Mat convertToGrayscale(Mat inputMat) {
+        try {
+            Mat grayMat = new Mat();
+
+            if (inputMat.channels() == 1) {
+                // Already grayscale
+                inputMat.copyTo(grayMat);
+            } else if (inputMat.channels() == 3) {
+                // Convert BGR to Gray
+                Imgproc.cvtColor(inputMat, grayMat, Imgproc.COLOR_BGR2GRAY);
+            } else if (inputMat.channels() == 4) {
+                // Convert BGRA to Gray
+                Imgproc.cvtColor(inputMat, grayMat, Imgproc.COLOR_BGRA2GRAY);
+            } else {
+                Log.e(TAG, "Unsupported number of channels: " + inputMat.channels());
+                return null;
+            }
+
+            Log.d(TAG, "Converted to grayscale");
+            return grayMat;
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error converting to grayscale", e);
+            return null;
+        }
+    }
+
+    /**
+     * Step 3: Apply Gaussian blur to reduce noise
+     */
+    private static Mat applyGaussianBlur(Mat inputMat) {
+        try {
+            Mat blurredMat = new Mat();
+            Size kSize = new Size(GAUSSIAN_BLUR_SIZE, GAUSSIAN_BLUR_SIZE);
+            Imgproc.GaussianBlur(inputMat, blurredMat, kSize, 0);
+
+            Log.d(TAG, "Applied Gaussian blur");
+            return blurredMat;
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error applying Gaussian blur", e);
+            return null;
+        }
+    }
+
+    /**
+     * Step 4: Use Canny edge detection
+     */
+    private static Mat applyCannyEdgeDetection(Mat inputMat) {
+        try {
+            Mat edgesMat = new Mat();
+            Imgproc.Canny(inputMat, edgesMat, CANNY_THRESHOLD_1, CANNY_THRESHOLD_2);
+
+            // Optional: Dilate edges to close gaps
+            Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3));
+            Imgproc.dilate(edgesMat, edgesMat, kernel);
+            kernel.release();
+
+            Log.d(TAG, "Applied Canny edge detection");
+            return edgesMat;
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error applying Canny edge detection", e);
+            return null;
+        }
+    }
+
+    /**
+     * Step 5: Find contours in edge-detected image
+     */
+    private static List<MatOfPoint> findContours(Mat edgesMat) {
+        try {
+            List<MatOfPoint> contours = new ArrayList<>();
+            Mat hierarchy = new Mat();
+
+            Imgproc.findContours(
+                edgesMat,
+                contours,
+                hierarchy,
+                Imgproc.RETR_EXTERNAL,
+                Imgproc.CHAIN_APPROX_SIMPLE
+            );
+
+            hierarchy.release();
+
+            Log.d(TAG, "Found " + contours.size() + " contours");
+            return contours;
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error finding contours", e);
+            return null;
+        }
+    }
+
+    /**
+     * Step 6: Find largest rectangular contour
+     */
+    private static List<Point> findLargestRectangle(List<MatOfPoint> contours, Size imageSize) {
+        try {
+            double imageArea = imageSize.width * imageSize.height;
+            double minArea = imageArea * MIN_CONTOUR_AREA_RATIO;
+
+            // Sort contours by area (largest first)
+            Collections.sort(contours, new Comparator<MatOfPoint>() {
+                @Override
+                public int compare(MatOfPoint c1, MatOfPoint c2) {
+                    double area1 = Imgproc.contourArea(c1);
+                    double area2 = Imgproc.contourArea(c2);
+                    return Double.compare(area2, area1);
+                }
+            });
+
+            // Try to find a rectangular contour
+            for (MatOfPoint contour : contours) {
+                double area = Imgproc.contourArea(contour);
+
+                // Skip if too small
+                if (area < minArea) {
+                    continue;
+                }
+
+                // Calculate perimeter
+                MatOfPoint2f contour2f = new MatOfPoint2f(contour.toArray());
+                double perimeter = Imgproc.arcLength(contour2f, true);
+
+                // Approximate polygon
+                MatOfPoint2f approxCurve = new MatOfPoint2f();
+                Imgproc.approxPolyDP(contour2f, approxCurve, EPSILON_MULTIPLIER * perimeter, true);
+
+                // Check if it's a quadrilateral (4 corners)
+                if (approxCurve.total() == 4) {
+                    // Validate that it's a valid rectangle
+                    List<Point> points = new ArrayList<>();
+                    for (int i = 0; i < 4; i++) {
+                        double[] coords = approxCurve.get(i, 0);
+                        points.add(new Point(coords[0], coords[1]));
+                    }
+
+                    // Validate corners are within image bounds
+                    if (validateCorners(points, imageSize)) {
+                        Log.d(TAG, "Found valid rectangular document with area: " + area);
+
+                        // Order points: top-left, top-right, bottom-right, bottom-left
+                        List<Point> orderedPoints = orderPoints(points);
+
+                        // Clean up
+                        contour2f.release();
+                        approxCurve.release();
+
+                        return orderedPoints;
+                    }
+                }
+
+                contour2f.release();
+                approxCurve.release();
+            }
+
+            Log.w(TAG, "No valid rectangular contour found");
+            return null;
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error finding largest rectangle", e);
+            return null;
+        }
+    }
+
+    /**
+     * Validate that corners are within image bounds and form a reasonable rectangle
+     */
+    private static boolean validateCorners(List<Point> points, Size imageSize) {
+        if (points == null || points.size() != 4) {
+            return false;
+        }
+
+        try {
+            // Check all points are within image bounds
+            for (Point p : points) {
+                if (p.x < 0 || p.x > imageSize.width || p.y < 0 || p.y > imageSize.height) {
+                    Log.w(TAG, "Corner out of bounds: " + p);
+                    return false;
+                }
+            }
+
+            // Calculate area of the quadrilateral
+            double area = calculateQuadrilateralArea(points);
+            double imageArea = imageSize.width * imageSize.height;
+
+            // Validate area is reasonable (not too small, not too large)
+            if (area < imageArea * 0.1 || area > imageArea * 0.95) {
+                Log.w(TAG, "Area ratio invalid: " + (area / imageArea));
+                return false;
+            }
+
+            return true;
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error validating corners", e);
+            return false;
+        }
+    }
+
+    /**
+     * Calculate area of quadrilateral using Shoelace formula
+     */
+    private static double calculateQuadrilateralArea(List<Point> points) {
+        double area = 0;
+        int n = points.size();
+
+        for (int i = 0; i < n; i++) {
+            Point p1 = points.get(i);
+            Point p2 = points.get((i + 1) % n);
+            area += (p1.x * p2.y) - (p2.x * p1.y);
+        }
+
+        return Math.abs(area / 2.0);
+    }
+
+    /**
+     * Order points in clockwise order: top-left, top-right, bottom-right, bottom-left
+     */
+    private static List<Point> orderPoints(List<Point> points) {
+        // Sort by y-coordinate (top points have smaller y)
+        Collections.sort(points, new Comparator<Point>() {
+            @Override
+            public int compare(Point p1, Point p2) {
+                return Double.compare(p1.y, p2.y);
+            }
+        });
+
+        List<Point> orderedPoints = new ArrayList<>();
+
+        // Top two points
+        Point tl = points.get(0).x < points.get(1).x ? points.get(0) : points.get(1);
+        Point tr = points.get(0).x > points.get(1).x ? points.get(0) : points.get(1);
+
+        // Bottom two points
+        Point bl = points.get(2).x < points.get(3).x ? points.get(2) : points.get(3);
+        Point br = points.get(2).x > points.get(3).x ? points.get(2) : points.get(3);
+
+        orderedPoints.add(tl);  // Top-left
+        orderedPoints.add(tr);  // Top-right
+        orderedPoints.add(br);  // Bottom-right
+        orderedPoints.add(bl);  // Bottom-left
+
+        return orderedPoints;
+    }
+
+    /**
+     * Data class to hold detected document edges
+     */
+    public static class DocumentEdges {
+        public final List<Point> corners;
+        public final int imageWidth;
+        public final int imageHeight;
+
+        public DocumentEdges(List<Point> corners, int imageWidth, int imageHeight) {
+            this.corners = corners;
+            this.imageWidth = imageWidth;
+            this.imageHeight = imageHeight;
+        }
+
+        /**
+         * Get top-left corner
+         */
+        public Point getTopLeft() {
+            return corners.get(0);
+        }
+
+        /**
+         * Get top-right corner
+         */
+        public Point getTopRight() {
+            return corners.get(1);
+        }
+
+        /**
+         * Get bottom-right corner
+         */
+        public Point getBottomRight() {
+            return corners.get(2);
+        }
+
+        /**
+         * Get bottom-left corner
+         */
+        public Point getBottomLeft() {
+            return corners.get(3);
+        }
+
+        /**
+         * Check if edges are valid
+         */
+        public boolean isValid() {
+            return corners != null && corners.size() == 4;
+        }
+
+        @Override
+        public String toString() {
+            return "DocumentEdges{" +
+                    "corners=" + corners.size() +
+                    ", imageSize=" + imageWidth + "x" + imageHeight +
+                    '}';
+        }
+    }
+}
+

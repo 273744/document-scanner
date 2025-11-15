@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    tools:context=".MultiPageActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Header -->
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            android:elevation="4dp"
+            app:title="Multi-Page Document"
+            app:titleTextColor="@android:color/white" />
+
+        <!-- Page Count -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="center_vertical"
+            android:background="@android:color/white"
+            android:elevation="2dp">
+
+            <TextView
+                android:id="@+id/tvPageCount"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="0 pages"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                tools:text="5 pages" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Drag to reorder • Swipe to remove"
+                android:textSize="12sp"
+                android:textColor="@android:color/darker_gray" />
+
+        </LinearLayout>
+
+        <!-- RecyclerView for Pages -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvPages"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="8dp"
+            android:clipToPadding="false"
+            tools:listitem="@layout/item_page" />
+
+        <!-- Empty State -->
+        <LinearLayout
+            android:id="@+id/emptyState"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="32dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:src="@android:drawable/ic_menu_gallery"
+                android:alpha="0.3"
+                android:contentDescription="@string/no_documents_available" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="No pages added yet"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Tap + to add your first page"
+                android:textSize="14sp"
+                android:textColor="@android:color/darker_gray" />
+
+        </LinearLayout>
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="center"
+            android:background="@android:color/white"
+            android:elevation="8dp">
+
+            <!-- Preview Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPreview"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Preview"
+                app:icon="@android:drawable/ic_menu_view"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+
+            <!-- Share Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnShare"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:text="Share"
+                app:icon="@android:drawable/ic_menu_share"
+                style="@style/Widget.Material3.Button.TonalButton" />
+
+            <!-- Generate PDF Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGeneratePdf"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Generate PDF"
+                app:icon="@android:drawable/ic_menu_save"
+                style="@style/Widget.Material3.Button" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- FAB to Add Page -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAddPage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:contentDescription="Add page"
+        app:srcCompat="@android:drawable/ic_input_add" />
+
+    <!-- Loading Overlay -->
+    <FrameLayout
+        android:id="@+id/loadingOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#CC000000"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:indeterminateTint="@android:color/white" />
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/processing"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                tools:text="Generating PDF..." />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+

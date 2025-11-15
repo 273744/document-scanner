@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    tools:context=".MainActivity">
+
+    <!-- App Title -->
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/app_name"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorPrimary"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="24dp" />
+
+    <!-- Document Preview Card -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardPreview"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="4dp"
+        app:strokeWidth="2dp"
+        app:strokeColor="?attr/colorPrimary"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/btnCapture"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="32dp"
+        app:layout_constraintHeight_percent="0.5">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <!-- Document Preview ImageView -->
+            <ImageView
+                android:id="@+id/ivDocumentPreview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerInside"
+                android:contentDescription="@string/document_preview"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Placeholder Text when no image -->
+            <TextView
+                android:id="@+id/tvPlaceholder"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/no_document_preview"
+                android:textSize="16sp"
+                android:textColor="?android:attr/textColorSecondary"
+                android:gravity="center"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Capture Document Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCapture"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/capture_document"
+        android:textSize="16sp"
+        android:padding="16dp"
+        app:icon="@android:drawable/ic_menu_camera"
+        app:iconGravity="start"
+        app:iconPadding="8dp"
+        app:cornerRadius="12dp"
+        app:layout_constraintBottom_toTopOf="@id/btnGallery"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="16dp"
+        style="@style/Widget.Material3.Button.ElevatedButton" />
+
+    <!-- View Gallery Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnGallery"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/view_gallery"
+        android:textSize="16sp"
+        android:padding="16dp"
+        app:icon="@android:drawable/ic_menu_gallery"
+        app:iconGravity="start"
+        app:iconPadding="8dp"
+        app:cornerRadius="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="24dp"
+        style="@style/Widget.Material3.Button.TonalButton" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+

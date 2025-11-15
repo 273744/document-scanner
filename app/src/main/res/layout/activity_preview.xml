@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    tools:context=".PreviewActivity">
+
+    <!-- Main Content -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Image Preview -->
+        <ImageView
+            android:id="@+id/ivPreview"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:scaleType="fitCenter"
+            android:contentDescription="@string/document_preview"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Loading Overlay -->
+        <FrameLayout
+            android:id="@+id/loadingOverlay"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="#CC000000"
+            android:visibility="gone"
+            android:clickable="true"
+            android:focusable="true"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:indeterminateTint="@android:color/white" />
+
+                <TextView
+                    android:id="@+id/tvStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/processing"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    tools:text="Processing..." />
+
+            </LinearLayout>
+
+        </FrameLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Bottom Sheet -->
+    <LinearLayout
+        android:id="@+id/bottomSheet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/bottom_sheet_background"
+        android:padding="16dp"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+        <!-- Handle -->
+        <View
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp"
+            android:background="@android:color/darker_gray"
+            android:alpha="0.5" />
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/enhance_image"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Filters RecyclerView -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvFilters"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:clipToPadding="false"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            tools:listitem="@layout/item_filter" />
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp"
+            android:gravity="center">
+
+            <!-- Reset Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnReset"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="@string/reset"
+                app:icon="@android:drawable/ic_menu_revert"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+
+            <!-- Save Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSave"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:text="@string/save"
+                app:icon="@android:drawable/ic_menu_save"
+                style="@style/Widget.Material3.Button" />
+
+            <!-- Generate PDF Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGeneratePdf"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="@string/pdf"
+                app:icon="@android:drawable/ic_menu_agenda"
+                style="@style/Widget.Material3.Button.TonalButton" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+

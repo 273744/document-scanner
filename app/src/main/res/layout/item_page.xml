@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardElevation="4dp"
+    app:cardCornerRadius="8dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Thumbnail Image -->
+        <ImageView
+            android:id="@+id/ivThumbnail"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="Page thumbnail"
+            android:background="@android:color/darker_gray"
+            tools:src="@android:drawable/ic_menu_gallery" />
+
+        <!-- Page Number Badge -->
+        <TextView
+            android:id="@+id/tvPageNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_margin="8dp"
+            android:background="@android:color/black"
+            android:backgroundTint="#CC000000"
+            android:padding="8dp"
+            android:text="Page 1"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:elevation="2dp"
+            tools:text="Page 1" />
+
+        <!-- Drag Handle Indicator -->
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_margin="8dp"
+            android:src="@android:drawable/ic_menu_sort_by_size"
+            android:alpha="0.7"
+            android:contentDescription="Drag handle"
+            app:tint="@android:color/white" />
+
+    </RelativeLayout>
+
+</com.google.android.material.card.MaterialCardView>
+
