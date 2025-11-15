@@ -84,10 +84,11 @@ public abstract class DocumentDatabase extends RoomDatabase {
 
     /**
      * Clear all data from database (for testing/reset)
+     * Must be called on a background thread
      */
-    public void clearAllTables() {
+    public void clearAllData() {
         if (instance != null) {
-            super.clearAllTables();
+            documentDAO().deleteAllDocuments();
         }
     }
 }

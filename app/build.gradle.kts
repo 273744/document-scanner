@@ -81,6 +81,14 @@ dependencies {
     // iText IO module for font and image handling
     implementation("com.itextpdf:io:7.2.5")
 
+    // Room Database - Local database persistence
+    // Room runtime library
+    implementation("androidx.room:room-runtime:2.6.1")
+    // Room annotation processor (kapt for Kotlin)
+    annotationProcessor("androidx.room:room-compiler:2.6.1")
+    // Room Kotlin extensions (optional but recommended)
+    implementation("androidx.room:room-ktx:2.6.1")
+
     // Compose dependencies (keeping for compatibility)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))

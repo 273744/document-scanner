@@ -109,10 +109,22 @@
                 android:value=".MainActivity" />
         </activity>
 
-        <!-- FileProvider for sharing PDFs -->
+        <!-- Document Viewer Activity for viewing and interacting with documents -->
+        <activity
+            android:name=".DocumentViewerActivity"
+            android:exported="false"
+            android:label="Document Viewer"
+            android:parentActivityName=".GalleryActivity"
+            android:theme="@style/Theme.MyApplication">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".GalleryActivity" />
+        </activity>
+
+        <!-- FileProvider for sharing PDFs and documents -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.provider"
+            android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
