@@ -170,6 +170,78 @@
 -dontwarn com.google.auto.value.**
 
 # Keep ML Kit models and metadata
+
+# ====================================
+# Cloud Storage ProGuard Rules
+# ====================================
+
+# Google Drive API
+-keep class com.google.api.services.drive.** { *; }
+-dontwarn com.google.api.services.drive.**
+
+# Google API Client
+-keep class com.google.api.client.** { *; }
+-dontwarn com.google.api.client.**
+
+# Google HTTP Client
+-keep class com.google.http.client.** { *; }
+-dontwarn com.google.http.client.**
+
+# Google OAuth Client
+-keep class com.google.oauth.client.** { *; }
+-dontwarn com.google.oauth.client.**
+
+# Google Sign-In
+-keep class com.google.android.gms.auth.** { *; }
+-dontwarn com.google.android.gms.auth.**
+
+# Dropbox SDK
+-keep class com.dropbox.core.** { *; }
+-dontwarn com.dropbox.core.**
+-keep class com.dropbox.android.** { *; }
+-dontwarn com.dropbox.android.**
+
+# Retrofit
+-keepattributes Signature
+-keepattributes Exceptions
+-keep class retrofit2.** { *; }
+-dontwarn retrofit2.**
+-keepclasseswithmembers class * {
+    @retrofit2.http.* <methods>;
+}
+
+# OkHttp
+-keep class okhttp3.** { *; }
+-dontwarn okhttp3.**
+-keep interface okhttp3.** { *; }
+-dontwarn okio.**
+
+# Gson
+-keep class com.google.gson.** { *; }
+-dontwarn com.google.gson.**
+-keepattributes Signature
+-keepattributes *Annotation*
+
+# Gson serialization/deserialization
+-keep class * implements com.google.gson.TypeAdapter
+-keep class * implements com.google.gson.TypeAdapterFactory
+-keep class * implements com.google.gson.JsonSerializer
+-keep class * implements com.google.gson.JsonDeserializer
+
+# Keep data classes for Gson
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
+
+# WorkManager
+-keep class androidx.work.** { *; }
+-dontwarn androidx.work.**
+-keep class * extends androidx.work.Worker
+-keep class * extends androidx.work.CoroutineWorker
+
+# Coroutines
+-keep class kotlinx.coroutines.** { *; }
+-dontwarn kotlinx.coroutines.**
 -keep class com.google.mlkit.vision.** { *; }
 -keep class com.google.mlkit.common.** { *; }
 
