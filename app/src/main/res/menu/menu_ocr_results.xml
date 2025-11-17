@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_highlight"
+        android:icon="@drawable/ic_settings"
+        android:title="@string/highlight_text"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_export_txt"
+        android:icon="@android:drawable/ic_menu_save"
+        android:title="@string/export_as_txt"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_copy_all"
+        android:icon="@android:drawable/ic_menu_set_as"
+        android:title="@string/copy_all_text"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_select_language"
+        android:icon="@android:drawable/ic_dialog_info"
+        android:title="@string/reprocess_with_language"
+        app:showAsAction="never" />
+
+</menu>
+

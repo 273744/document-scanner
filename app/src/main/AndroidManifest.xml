@@ -197,6 +197,19 @@
                 android:value=".GalleryActivity" />
         </activity>
 
+        <!-- OCR Results Activity - Display extracted text from documents -->
+        <activity
+            android:name=".OCRResultsActivity"
+            android:exported="false"
+            android:label="OCR Results"
+            android:parentActivityName=".PreviewActivity"
+            android:theme="@style/Theme.MyApplication"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".PreviewActivity" />
+        </activity>
+
         <!-- FileProvider for sharing PDFs and documents -->
         <provider
             android:name="androidx.core.content.FileProvider"

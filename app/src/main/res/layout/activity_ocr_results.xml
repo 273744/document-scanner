@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context=".OCRResultsActivity">
+
+    <!-- App Bar Layout with Toolbar -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fitsSystemWindows="true"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            app:layout_scrollFlags="scroll|enterAlways"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+            app:title="OCR Results" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Main Content with Nested Scroll View -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Scanned Image Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Image View -->
+                    <ImageView
+                        android:id="@+id/imageView"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp"
+                        android:adjustViewBounds="true"
+                        android:contentDescription="@string/scanned_document_image"
+                        android:scaleType="centerCrop" />
+
+                    <!-- Image Info -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/colorSurface"
+                        android:padding="8dp"
+                        android:text="@string/tap_to_highlight_text"
+                        android:textAlignment="center"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- OCR Info Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Confidence -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginEnd="8dp"
+                            android:contentDescription="@string/confidence_icon"
+                            android:src="@drawable/ic_quality_high"
+                            android:tint="?attr/colorPrimary" />
+
+                        <TextView
+                            android:id="@+id/tvConfidence"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/confidence_0"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="14sp" />
+
+                    </LinearLayout>
+
+                    <!-- Language -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginEnd="8dp"
+                            android:contentDescription="@string/language_icon"
+                            android:src="@android:drawable/ic_dialog_info"
+                            android:tint="?attr/colorPrimary" />
+
+                        <TextView
+                            android:id="@+id/tvLanguage"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/language_auto"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="14sp" />
+
+                    </LinearLayout>
+
+                    <!-- Word Count -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginEnd="8dp"
+                            android:contentDescription="@string/word_count_icon"
+                            android:src="@drawable/ic_document"
+                            android:tint="?attr/colorPrimary" />
+
+                        <TextView
+                            android:id="@+id/tvWordCount"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/_0_words"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="14sp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Extracted Text Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="80dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Title -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/colorSurfaceVariant"
+                        android:padding="12dp"
+                        android:text="@string/extracted_text"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <!-- Editable Text -->
+                    <EditText
+                        android:id="@+id/editTextOCR"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@android:color/transparent"
+                        android:gravity="top|start"
+                        android:hint="@string/recognized_text_will_appear_here"
+                        android:inputType="textMultiLine"
+                        android:minHeight="200dp"
+                        android:padding="16dp"
+                        android:scrollbars="vertical"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="16sp"
+                        android:importantForAutofill="no" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Progress Bar -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone" />
+
+    <!-- Floating Action Buttons -->
+
+    <!-- Save FAB (Extended) -->
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fabSave"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:layout_marginBottom="156dp"
+        android:text="@string/save"
+        android:visibility="gone"
+        app:icon="@android:drawable/ic_menu_save" />
+
+    <!-- Share FAB -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabShare"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:layout_marginBottom="92dp"
+        android:contentDescription="@string/share_text"
+        app:srcCompat="@android:drawable/ic_menu_share" />
+
+    <!-- Copy FAB -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabCopy"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:contentDescription="@string/copy_to_clipboard"
+        app:srcCompat="@android:drawable/ic_menu_set_as" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+
