@@ -776,6 +776,226 @@ public void testLanguageDetection() {
 // Cache recognizer instances
 ```
 
+## OCRTextRecognizer Usage
+
+### Complete Implementation
+
+```java
+public class DocumentOCRActivity extends AppCompatActivity {
+    
+    private OCRTextRecognizer ocrRecognizer;
+    private ImageView imageView;
+    private TextView textView;
+    private ProgressBar progressBar;
+    private TextView progressText;
+    
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_document_ocr);
+        
+        imageView = findViewById(R.id.imageView);
+        textView = findViewById(R.id.textView);
+        progressBar = findViewById(R.id.progressBar);
+        progressText = findViewById(R.id.progressText);
+        
+        // Initialize OCR recognizer
+        ocrRecognizer = new OCRTextRecognizer(this);
+        
+        // Set language (optional - defaults to AUTO_DETECT)
+        ocrRecognizer.setLanguage(OCRTextRecognizer.Language.AUTO_DETECT);
+        
+        // Load and process image
+        Bitmap documentImage = loadDocumentImage();
+        processDocument(documentImage);
+    }
+    
+    private void processDocument(Bitmap bitmap) {
+        imageView.setImageBitmap(bitmap);
+        progressBar.setVisibility(View.VISIBLE);
+        
+        ocrRecognizer.processImage(bitmap, new OCRTextRecognizer.OCRCallback() {
+            @Override
+            public void onProgress(int progress, String message) {
+                runOnUiThread(() -> {
+                    progressBar.setProgress(progress);
+                    progressText.setText(message);
+                });
+            }
+            
+            @Override
+            public void onSuccess(OCRTextRecognizer.OCRResult result) {
+                runOnUiThread(() -> {
+                    progressBar.setVisibility(View.GONE);
+                    
+                    // Display results
+                    displayOCRResult(result);
+                    
+                    // Highlight text on image
+                    highlightTextOnImage(result);
+                    
+                    // Save to database
+                    saveOCRResult(result);
+                });
+            }
+            
+            @Override
+            public void onError(Exception e) {
+                runOnUiThread(() -> {
+                    progressBar.setVisibility(View.GONE);
+                    Toast.makeText(DocumentOCRActivity.this,
+                        "OCR failed: " + e.getMessage(),
+                        Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+    
+    private void displayOCRResult(OCRTextRecognizer.OCRResult result) {
+        StringBuilder sb = new StringBuilder();
+        
+        sb.append("Language: ").append(result.language.displayName).append("\n");
+        sb.append("Confidence: ").append(String.format("%.1f%%", result.overallConfidence * 100)).append("\n");
+        sb.append("Blocks: ").append(result.blocks.size()).append("\n\n");
+        sb.append("Extracted Text:\n\n");
+        sb.append(result.fullText);
+        
+        textView.setText(sb.toString());
+    }
+    
+    private void highlightTextOnImage(OCRTextRecognizer.OCRResult result) {
+        // Get word-level bounding boxes
+        List<OCRTextRecognizer.TextBoundingBox> boxes = 
+            ocrRecognizer.getWordBoundingBoxes(result);
+        
+        // Create overlay with bounding boxes
+        Bitmap highlighted = drawBoundingBoxes(imageView.getDrawable(), boxes);
+        imageView.setImageBitmap(highlighted);
+    }
+    
+    private Bitmap drawBoundingBoxes(Drawable drawable, 
+                                    List<OCRTextRecognizer.TextBoundingBox> boxes) {
+        Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap().copy(
+            Bitmap.Config.ARGB_8888, true);
+        Canvas canvas = new Canvas(bitmap);
+        Paint paint = new Paint();
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(3);
+        
+        for (OCRTextRecognizer.TextBoundingBox box : boxes) {
+            // Color based on confidence
+            if (box.confidence > 0.8f) {
+                paint.setColor(Color.GREEN);
+            } else if (box.confidence > 0.5f) {
+                paint.setColor(Color.YELLOW);
+            } else {
+                paint.setColor(Color.RED);
+            }
+            
+            canvas.drawRect(box.rect, paint);
+        }
+        
+        return bitmap;
+    }
+    
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (ocrRecognizer != null) {
+            ocrRecognizer.cleanup();
+        }
+    }
+}
+```
+
+### Language-Specific Recognition
+
+```java
+// English documents
+ocrRecognizer.setLanguage(OCRTextRecognizer.Language.LATIN);
+ocrRecognizer.processImage(englishDoc, callback);
+
+// Hindi documents
+ocrRecognizer.setLanguage(OCRTextRecognizer.Language.DEVANAGARI);
+ocrRecognizer.processImage(hindiDoc, callback);
+
+// Auto-detect language
+ocrRecognizer.setLanguage(OCRTextRecognizer.Language.AUTO_DETECT);
+ocrRecognizer.processImage(unknownDoc, callback);
+```
+
+### Extract Specific Information
+
+```java
+// Get all bounding boxes
+List<OCRTextRecognizer.TextBoundingBox> allBoxes = 
+    ocrRecognizer.getTextBoundingBoxes(result);
+
+// Get only word-level boxes
+List<OCRTextRecognizer.TextBoundingBox> wordBoxes = 
+    ocrRecognizer.getWordBoundingBoxes(result);
+
+// Filter by confidence
+List<OCRTextRecognizer.TextBoundingBox> highConfidence = new ArrayList<>();
+for (OCRTextRecognizer.TextBoundingBox box : wordBoxes) {
+    if (box.confidence > 0.8f) {
+        highConfidence.add(box);
+    }
+}
+```
+
+### Model Management
+
+```java
+// Check if model is downloaded
+ocrRecognizer.isModelDownloaded(
+    OCRTextRecognizer.Language.CHINESE,
+    isDownloaded -> {
+        if (!isDownloaded) {
+            // Download model
+            downloadChineseModel();
+        }
+    }
+);
+
+// Download model
+ocrRecognizer.downloadModel(
+    OCRTextRecognizer.Language.JAPANESE,
+    new OCRTextRecognizer.ModelDownloadCallback() {
+        @Override
+        public void onDownloadProgress(int progress, String message) {
+            updateProgress(progress, message);
+        }
+        
+        @Override
+        public void onDownloadSuccess() {
+            Toast.makeText(context, "Model downloaded", Toast.LENGTH_SHORT).show();
+        }
+        
+        @Override
+        public void onDownloadFailed(Exception e) {
+            Toast.makeText(context, "Download failed", Toast.LENGTH_SHORT).show();
+        }
+    }
+);
+
+// Delete model to save space
+ocrRecognizer.deleteModel(
+    OCRTextRecognizer.Language.KOREAN,
+    new OCRTextRecognizer.ModelDeleteCallback() {
+        @Override
+        public void onDeleteSuccess() {
+            Toast.makeText(context, "Model deleted", Toast.LENGTH_SHORT).show();
+        }
+        
+        @Override
+        public void onDeleteFailed(Exception e) {
+            Toast.makeText(context, "Delete failed", Toast.LENGTH_SHORT).show();
+        }
+    }
+);
+```
+
 ## Status: ✅ PRODUCTION-READY
 - Multi-language support (English, Hindi, Chinese, Japanese, Korean)
 - Language auto-detection
@@ -784,6 +1004,7 @@ public void testLanguageDetection() {
 - ProGuard configured
 - Comprehensive error handling
 - Performance optimized
+- OCRTextRecognizer class ready to use
 
 **Complete OCR solution with ML Kit!** 📝🔤✨
 
