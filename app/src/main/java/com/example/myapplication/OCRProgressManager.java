@@ -449,8 +449,7 @@ public class OCRProgressManager {
      * Show low confidence guidance
      */
     private void showLowConfidenceGuidance(String issue) {
-        String message = "Low confidence detected (" +
-            String.format("%.0f%%", confidence * 100) + ").\n\n";
+        String message = "Low confidence detected.\n\n";
 
         if (issue != null) {
             if (issue.contains("lighting")) {
