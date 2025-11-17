@@ -80,9 +80,10 @@
 -keep class org.opencv.imgcodecs.Imgcodecs { *; }
 
 # ====================================
-# ML Kit ProGuard Rules
+# ML Kit Text Recognition ProGuard Rules
 # ====================================
-# Keep ML Kit classes
+
+# Keep all ML Kit classes
 -keep class com.google.mlkit.** { *; }
 -dontwarn com.google.mlkit.**
 
@@ -94,11 +95,81 @@
 -keep class com.google.android.gms.mlkit.** { *; }
 -dontwarn com.google.android.gms.mlkit.**
 
+# Keep ML Kit Text Recognition classes
+-keep class com.google.mlkit.vision.text.** { *; }
+-keep interface com.google.mlkit.vision.text.** { *; }
+
+# Keep ML Kit Text Recognition Latin
+-keep class com.google.android.gms.internal.mlkit_vision_text.** { *; }
+-dontwarn com.google.android.gms.internal.mlkit_vision_text.**
+
+# Keep ML Kit Text Recognition Devanagari (Hindi)
+-keep class com.google.android.gms.internal.mlkit_vision_text_devanagari.** { *; }
+-dontwarn com.google.android.gms.internal.mlkit_vision_text_devanagari.**
+
+# Keep ML Kit Text Recognition Chinese
+-keep class com.google.android.gms.internal.mlkit_vision_text_chinese.** { *; }
+-dontwarn com.google.android.gms.internal.mlkit_vision_text_chinese.**
+
+# Keep ML Kit Text Recognition Japanese
+-keep class com.google.android.gms.internal.mlkit_vision_text_japanese.** { *; }
+-dontwarn com.google.android.gms.internal.mlkit_vision_text_japanese.**
+
+# Keep ML Kit Text Recognition Korean
+-keep class com.google.android.gms.internal.mlkit_vision_text_korean.** { *; }
+-dontwarn com.google.android.gms.internal.mlkit_vision_text_korean.**
+
+# Keep ML Kit Language Identification
+-keep class com.google.mlkit.nl.languageid.** { *; }
+-keep class com.google.android.gms.internal.mlkit_language_id.** { *; }
+-dontwarn com.google.android.gms.internal.mlkit_language_id.**
+
+# Keep ML Kit Translation
+-keep class com.google.mlkit.nl.translate.** { *; }
+-keep class com.google.android.gms.internal.mlkit_translate.** { *; }
+-dontwarn com.google.android.gms.internal.mlkit_translate.**
+
+# Keep ML Kit Common
+-keep class com.google.mlkit.common.** { *; }
+-keep class com.google.android.gms.internal.mlkit_common.** { *; }
+-dontwarn com.google.android.gms.internal.mlkit_common.**
+
 # Keep Google Play Services classes (required by ML Kit and ARCore)
 -keep class com.google.android.gms.** { *; }
 -dontwarn com.google.android.gms.**
 
-# Keep ML Kit models
+# Keep ML Kit native methods
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# Keep ML Kit model interfaces
+-keep interface com.google.mlkit.vision.interfaces.** { *; }
+
+# Keep ML Kit tasks and callbacks
+-keep class com.google.android.gms.tasks.** { *; }
+-keep interface com.google.android.gms.tasks.** { *; }
+
+# Keep ML Kit result classes
+-keepclassmembers class * {
+    @com.google.mlkit.common.** *;
+}
+
+# Prevent obfuscation of ML Kit annotation processors
+-keepattributes *Annotation*
+-keepattributes Signature
+-keepattributes InnerClasses
+-keepattributes EnclosingMethod
+
+# Keep ML Kit TensorFlow Lite models
+-keep class org.tensorflow.lite.** { *; }
+-dontwarn org.tensorflow.lite.**
+
+# Keep AutoValue classes used by ML Kit
+-keep class com.google.auto.value.** { *; }
+-dontwarn com.google.auto.value.**
+
+# Keep ML Kit models and metadata
 -keep class com.google.mlkit.vision.** { *; }
 -keep class com.google.mlkit.common.** { *; }
 

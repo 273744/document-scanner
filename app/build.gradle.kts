@@ -83,15 +83,49 @@ dependencies {
     // 2. Import as module: File → New → Import Module → select OpenCV-android-sdk/sdk
     // 3. Add dependency: implementation project(':opencv')
 
-    // ML Kit - Google's machine learning library for document scanning
-    // ML Kit Text Recognition (OCR) - Extract text from documents
-    implementation("com.google.mlkit:text-recognition:16.0.0")
+    // ================================
+    // ML Kit - Text Recognition & OCR
+    // ================================
+
+    // ML Kit Text Recognition V2 - Latin script (English)
+    // Provides on-device text recognition for Latin-based languages
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.0")
+
+    // ML Kit Text Recognition - Devanagari script (Hindi, Marathi, Nepali)
+    // Supports Hindi and other Devanagari-based languages
+    implementation("com.google.mlkit:text-recognition-devanagari:16.0.0")
+
+    // ML Kit Text Recognition - Chinese (Simplified and Traditional)
+    implementation("com.google.mlkit:text-recognition-chinese:16.0.0")
+
+    // ML Kit Text Recognition - Japanese
+    implementation("com.google.mlkit:text-recognition-japanese:16.0.0")
+
+    // ML Kit Text Recognition - Korean
+    implementation("com.google.mlkit:text-recognition-korean:16.0.0")
+
+    // ML Kit Language Identification
+    // Automatically detect language of recognized text
+    implementation("com.google.mlkit:language-id:17.0.5")
+
+    // ML Kit Translation (optional, for translating recognized text)
+    implementation("com.google.mlkit:translate:17.0.2")
+
     // ML Kit Document Scanner - Pre-built document scanning solution
     implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1")
+
     // ML Kit Barcode Scanning (optional, for QR codes on documents)
     implementation("com.google.mlkit:barcode-scanning:17.2.0")
+
     // ML Kit Image Labeling (optional, for document classification)
     implementation("com.google.mlkit:image-labeling:17.0.8")
+
+    // ML Kit Common - Required for ML Kit components
+    implementation("com.google.mlkit:common:18.10.0")
+
+    // CameraX ML Kit Vision integration
+    // Provides seamless integration between CameraX and ML Kit
+    implementation("androidx.camera:camera-mlkit-vision:1.3.0-alpha03")
 
     // OpenGL ES - For 3D rendering and AR visualization
     // OpenGL ES is already included in the Android SDK
