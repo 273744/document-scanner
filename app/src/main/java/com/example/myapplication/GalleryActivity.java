@@ -1,7 +1,9 @@
 package com.example.myapplication;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -14,6 +16,8 @@ import androidx.appcompat.widget.SearchView;
 import androidx.lifecycle.LiveData;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import java.io.File;
 
 import com.example.myapplication.database.Document;
 import com.example.myapplication.database.DocumentRepository;
@@ -227,8 +231,15 @@ public class GalleryActivity extends AppCompatActivity implements DocumentGaller
 
     @Override
     public void onDocumentClick(Document document) {
-        // Open document in PreviewActivity
-        PreviewActivity.start(this, document.getFilePath());
+        // Check if it's a PDF or image
+        String filePath = document.getFilePath();
+        if (filePath.toLowerCase().endsWith(".pdf")) {
+            // Open PDF with external viewer
+            openPdfDocument(filePath);
+        } else {
+            // Open image in DocumentViewerActivity
+            DocumentViewerActivity.startWithFile(this, filePath);
+        }
     }
 
     @Override
@@ -468,6 +479,27 @@ public class GalleryActivity extends AppCompatActivity implements DocumentGaller
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    /**
+     * Open PDF document with built-in viewer
+     */
+    private void openPdfDocument(String filePath) {
+        try {
+            File pdfFile = new File(filePath);
+            if (!pdfFile.exists()) {
+                Toast.makeText(this, "PDF file not found", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Use built-in PDF viewer
+            PdfViewerActivity.start(this, filePath);
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error opening PDF", e);
+            Toast.makeText(this, "Error opening PDF: " + e.getMessage(),
+                Toast.LENGTH_LONG).show();
+        }
     }
 
     /**

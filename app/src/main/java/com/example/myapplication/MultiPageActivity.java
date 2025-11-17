@@ -18,6 +18,9 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import com.example.myapplication.database.Document;
+import com.example.myapplication.database.DocumentRepository;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,6 +58,7 @@ public class MultiPageActivity extends AppCompatActivity implements PageAdapter.
     private ItemTouchHelper itemTouchHelper;
     private String generatedPdfPath;
     private File outputDirectory;
+    private DocumentRepository repository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,6 +82,9 @@ public class MultiPageActivity extends AppCompatActivity implements PageAdapter.
 
         // Create output directory
         outputDirectory = getOutputDirectory();
+
+        // Initialize repository
+        repository = DocumentRepository.getInstance(this);
 
         // Update UI
         updatePageCount();
@@ -177,11 +184,30 @@ public class MultiPageActivity extends AppCompatActivity implements PageAdapter.
      * Load initial images from intent or storage
      */
     private void loadInitialImages() {
+        // Check for single initial image from PreviewActivity
+        String initialImage = getIntent().getStringExtra("initial_image");
+        boolean continueScanning = getIntent().getBooleanExtra("continue_scanning", false);
+
+        if (initialImage != null && !initialImage.isEmpty()) {
+            imagePaths.add(initialImage);
+            pageAdapter.notifyDataSetChanged();
+            updatePageCount();
+            Log.d(TAG, "Added initial image to multi-page");
+
+            // If continue scanning mode, automatically prompt to add more
+            if (continueScanning) {
+                Toast.makeText(this, "Page 1 added. Tap + to add more pages",
+                    Toast.LENGTH_LONG).show();
+            }
+            return;
+        }
+
         // Check if images were passed via intent
         ArrayList<String> passedImages = getIntent().getStringArrayListExtra("image_paths");
         if (passedImages != null && !passedImages.isEmpty()) {
             imagePaths.addAll(passedImages);
             pageAdapter.notifyDataSetChanged();
+            updatePageCount();
             Log.d(TAG, "Loaded " + imagePaths.size() + " images from intent");
         } else {
             // Load recent images from storage
@@ -233,8 +259,10 @@ public class MultiPageActivity extends AppCompatActivity implements PageAdapter.
                 .setTitle("Add Page")
                 .setMessage("How would you like to add a new page?")
                 .setPositiveButton("Take Photo", (dialog, which) -> {
-                    // Launch camera activity
+                    // Launch camera activity in multi-page mode
                     Intent intent = new Intent(this, CameraActivity.class);
+                    intent.putExtra("multi_page_mode", true);  // Flag for automatic workflow
+                    intent.putExtra("current_page_count", imagePaths.size());  // Current page number
                     startActivityForResult(intent, REQUEST_ADD_PAGE);
                 })
                 .setNegativeButton("Cancel", null)
@@ -342,6 +370,14 @@ public class MultiPageActivity extends AppCompatActivity implements PageAdapter.
             return;
         }
 
+        // CRITICAL DEBUG: Log all image paths before generating PDF
+        Log.d(TAG, "=== GENERATING PDF ===");
+        Log.d(TAG, "Total images in list: " + imagePaths.size());
+        for (int i = 0; i < imagePaths.size(); i++) {
+            Log.d(TAG, "Image " + (i+1) + ": " + imagePaths.get(i));
+        }
+        Log.d(TAG, "======================");
+
         showProgress(true, "Generating PDF...");
 
         new Thread(() -> {
@@ -351,7 +387,7 @@ public class MultiPageActivity extends AppCompatActivity implements PageAdapter.
                         .setPageSize(PdfGenerator.PageSize.A4)
                         .setCompressionLevel(PdfGenerator.CompressionLevel.BEST_COMPRESSION)
                         .setImageQuality(85)
-                        .setAddTitlePage(true);
+                        .setAddTitlePage(false);  // Don't add title page - just the scanned images!
 
                 // Create metadata
                 PdfGenerator.PdfMetadata metadata = new PdfGenerator.PdfMetadata()
@@ -360,6 +396,8 @@ public class MultiPageActivity extends AppCompatActivity implements PageAdapter.
                         .setSubject("Scanned Document - " + imagePaths.size() + " pages");
 
                 options.setMetadata(metadata);
+
+                Log.d(TAG, "Calling PdfGenerator with " + imagePaths.size() + " images");
 
                 // Generate PDF
                 generatedPdfPath = PdfGenerator.generatePdfFromImages(
@@ -372,19 +410,39 @@ public class MultiPageActivity extends AppCompatActivity implements PageAdapter.
                 if (generatedPdfPath != null) {
                     String fileSize = PdfGenerator.getFileSizeString(generatedPdfPath);
 
+                    // Save PDF to database
+                    File pdfFile = new File(generatedPdfPath);
+                    Document pdfDocument = new Document();
+                    pdfDocument.setName(pdfFile.getName());
+                    pdfDocument.setFilePath(generatedPdfPath);
+                    pdfDocument.setCreatedDate(System.currentTimeMillis());
+                    pdfDocument.setFileSize(pdfFile.length());
+                    pdfDocument.setPageCount(imagePaths.size());
+                    pdfDocument.setTags("Multi-Page PDF");
+
+                    repository.insert(pdfDocument, success -> {
+                        Log.d(TAG, "Multi-page PDF saved to database: " + success);
+                    });
+
                     runOnUiThread(() -> {
                         showProgress(false, null);
                         btnPreview.setEnabled(true);
                         btnShare.setEnabled(true);
 
                         new MaterialAlertDialogBuilder(this)
-                                .setTitle("PDF Generated")
+                                .setTitle("✓ Multi-Page PDF Created!")
                                 .setMessage("Successfully created PDF with " + imagePaths.size() +
-                                           " pages\n\nFile: " + new File(generatedPdfPath).getName() +
-                                           "\nSize: " + fileSize)
-                                .setPositiveButton("Preview", (d, w) -> previewPdf())
-                                .setNeutralButton("Share", (d, w) -> sharePdf())
-                                .setNegativeButton("OK", null)
+                                           (imagePaths.size() == 1 ? " page" : " pages") +
+                                           "\n\nFile: " + pdfFile.getName() +
+                                           "\nSize: " + fileSize +
+                                           "\n\n✓ Saved to Gallery")
+                                .setPositiveButton("View in Gallery", (d, w) -> {
+                                    Intent intent = new Intent(this, GalleryActivity.class);
+                                    startActivity(intent);
+                                    finish();
+                                })
+                                .setNeutralButton("Share PDF", (d, w) -> sharePdf())
+                                .setNegativeButton("Done", (d, w) -> finish())
                                 .show();
 
                         Log.d(TAG, "PDF generated: " + generatedPdfPath);
@@ -421,16 +479,18 @@ public class MultiPageActivity extends AppCompatActivity implements PageAdapter.
             Intent intent = new Intent(Intent.ACTION_VIEW);
             Uri pdfUri = androidx.core.content.FileProvider.getUriForFile(
                     this,
-                    getPackageName() + ".provider",
+                    getPackageName() + ".fileprovider",
                     new File(generatedPdfPath)
             );
             intent.setDataAndType(pdfUri, "application/pdf");
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
             if (intent.resolveActivity(getPackageManager()) != null) {
-                startActivity(intent);
+                startActivity(Intent.createChooser(intent, "Open PDF with"));
             } else {
-                Toast.makeText(this, "No PDF viewer found", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "No PDF viewer app found. Please install one.",
+                    Toast.LENGTH_LONG).show();
             }
         } catch (Exception e) {
             Log.e(TAG, "Error opening PDF", e);
@@ -512,12 +572,37 @@ public class MultiPageActivity extends AppCompatActivity implements PageAdapter.
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == REQUEST_ADD_PAGE && resultCode == RESULT_OK) {
-            // Get newly captured image path
-            // TODO: Get path from CameraActivity result
-            Toast.makeText(this, "New page added", Toast.LENGTH_SHORT).show();
-            updatePageCount();
+        Log.d(TAG, "=== onActivityResult ===");
+        Log.d(TAG, "requestCode: " + requestCode + ", resultCode: " + resultCode);
+        Log.d(TAG, "REQUEST_ADD_PAGE: " + REQUEST_ADD_PAGE + ", RESULT_OK: " + RESULT_OK);
+        Log.d(TAG, "data != null: " + (data != null));
+
+        if (requestCode == REQUEST_ADD_PAGE && resultCode == RESULT_OK && data != null) {
+            // Get newly captured and saved image path
+            String newImagePath = data.getStringExtra("saved_image_path");
+            Log.d(TAG, "Received image path: " + newImagePath);
+            Log.d(TAG, "Current list size BEFORE add: " + imagePaths.size());
+
+            if (newImagePath != null && !newImagePath.isEmpty()) {
+                imagePaths.add(newImagePath);
+                Log.d(TAG, "Current list size AFTER add: " + imagePaths.size());
+                Log.d(TAG, "All images in list:");
+                for (int i = 0; i < imagePaths.size(); i++) {
+                    Log.d(TAG, "  [" + i + "]: " + imagePaths.get(i));
+                }
+
+                pageAdapter.notifyDataSetChanged();
+                updatePageCount();
+                Toast.makeText(this, "Page " + imagePaths.size() + " added", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "✓ Page added successfully!");
+            } else {
+                Log.e(TAG, "ERROR: newImagePath is null or empty!");
+                Toast.makeText(this, "Failed to add page", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Log.w(TAG, "Activity result not processed - conditions not met");
         }
+        Log.d(TAG, "========================");
     }
 
     /**

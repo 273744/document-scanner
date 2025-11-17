@@ -19,6 +19,9 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
+import com.example.myapplication.database.Document;
+import com.example.myapplication.database.DocumentRepository;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
@@ -54,6 +57,7 @@ public class PreviewActivity extends AppCompatActivity implements FilterAdapter.
     private Bitmap currentBitmap;
     private FilterAdapter filterAdapter;
     private File outputDirectory;
+    private DocumentRepository repository;
 
     // Current filter
     private FilterType currentFilter = FilterType.ORIGINAL;
@@ -93,6 +97,10 @@ public class PreviewActivity extends AppCompatActivity implements FilterAdapter.
             return;
         }
 
+        // Check if we're in multi-page mode
+        boolean multiPageMode = getIntent().getBooleanExtra("multi_page_mode", false);
+        int pageNumber = getIntent().getIntExtra("page_number", 1);
+
         // Initialize views
         initializeViews();
 
@@ -110,6 +118,15 @@ public class PreviewActivity extends AppCompatActivity implements FilterAdapter.
 
         // Create output directory
         outputDirectory = getOutputDirectory();
+
+        // Initialize repository
+        repository = DocumentRepository.getInstance(this);
+
+        // Show appropriate message for multi-page mode
+        if (multiPageMode) {
+            Toast.makeText(this, "Adding page " + pageNumber + "...\nApply filter or tap Save",
+                Toast.LENGTH_LONG).show();
+        }
     }
 
     /**
@@ -408,18 +425,57 @@ public class PreviewActivity extends AppCompatActivity implements FilterAdapter.
                 String savedPath = outputFile.getAbsolutePath();
                 Log.d(TAG, "Image saved: " + savedPath);
 
+                // Save to database
+                Document document = new Document();
+                document.setName(outputFile.getName());
+                document.setFilePath(savedPath);
+                document.setCreatedDate(System.currentTimeMillis());
+                document.setFileSize(outputFile.length());
+                document.setPageCount(1);
+                document.setTags(currentFilter.getDisplayName());
+
+                repository.insert(document, success -> {
+                    Log.d(TAG, "Document saved to database: " + success);
+                });
+
+                // Always set result with saved path for activities that need it
+                Intent resultIntent = new Intent();
+                resultIntent.putExtra("saved_image_path", savedPath);
+                setResult(RESULT_OK, resultIntent);
+
+                Log.d(TAG, "=== RESULT SET ===");
+                Log.d(TAG, "setResult called with RESULT_OK");
+                Log.d(TAG, "saved_image_path: " + savedPath);
+                Log.d(TAG, "==================");
+
                 runOnUiThread(() -> {
                     showProgress(false, null);
 
+                    // Check if we're in multi-page mode
+                    boolean multiPageMode = getIntent().getBooleanExtra("multi_page_mode", false);
+
+                    if (multiPageMode) {
+                        // AUTO MODE: Just show quick feedback and return immediately
+                        Toast.makeText(this, "✓ Page added!", Toast.LENGTH_SHORT).show();
+                        // Automatically return to MultiPageActivity (no dialog!)
+                        finish();
+                        return;
+                    }
+
+                    // NORMAL MODE: Show dialog with options
                     new MaterialAlertDialogBuilder(this)
-                        .setTitle("Image Saved")
-                        .setMessage("Enhanced image saved successfully!")
-                        .setPositiveButton("OK", (dialog, which) -> {
-                            // Return to camera or main
-                            finish();
+                        .setTitle("✓ Page Saved!")
+                        .setMessage("Page saved successfully!\n\nWhat would you like to do next?")
+                        .setPositiveButton("Add More Pages", (dialog, which) -> {
+                            // Start multi-page session with this image
+                            addToMultiPageAndContinue(savedPath);
                         })
                         .setNeutralButton("Generate PDF", (dialog, which) -> {
+                            // Generate PDF from this single page
                             generatePdf();
+                        })
+                        .setNegativeButton("Done", (dialog, which) -> {
+                            finish();
                         })
                         .show();
                 });
@@ -450,16 +506,38 @@ public class PreviewActivity extends AppCompatActivity implements FilterAdapter.
                 );
 
                 if (pdfPath != null) {
+                    // Save PDF to database
+                    File pdfFile = new File(pdfPath);
+                    Document pdfDocument = new Document();
+                    pdfDocument.setName(pdfFile.getName());
+                    pdfDocument.setFilePath(pdfPath);
+                    pdfDocument.setCreatedDate(System.currentTimeMillis());
+                    pdfDocument.setFileSize(pdfFile.length());
+                    pdfDocument.setPageCount(1);
+                    pdfDocument.setTags("PDF");
+
+                    repository.insert(pdfDocument, success -> {
+                        Log.d(TAG, "PDF saved to database: " + success);
+                    });
+
                     runOnUiThread(() -> {
                         showProgress(false, null);
 
                         new MaterialAlertDialogBuilder(this)
                             .setTitle("PDF Generated")
-                            .setMessage("PDF saved successfully!\n\n" + new File(pdfPath).getName())
-                            .setPositiveButton("OK", (dialog, which) -> {
-                                Toast.makeText(this, "PDF: " + pdfPath, Toast.LENGTH_LONG).show();
+                            .setMessage("PDF saved successfully!\n\n" + pdfFile.getName() + "\n\nYou can view it in the Gallery.")
+                            .setPositiveButton("View Gallery", (dialog, which) -> {
+                                // Open gallery
+                                Intent intent = new Intent(this, GalleryActivity.class);
+                                startActivity(intent);
+                                finish();
                             })
-                            .setNeutralButton("Done", (dialog, which) -> {
+                            .setNeutralButton("Share", (dialog, which) -> {
+                                // Share PDF
+                                ShareManager shareManager = new ShareManager(this);
+                                shareManager.sharePDF(pdfFile, ShareManager.ShareTarget.ALL);
+                            })
+                            .setNegativeButton("Done", (dialog, which) -> {
                                 finish();
                             })
                             .show();
@@ -492,6 +570,18 @@ public class PreviewActivity extends AppCompatActivity implements FilterAdapter.
                 tvStatus.setText(message);
             }
         });
+    }
+
+    /**
+     * Add current page to multi-page document and continue scanning
+     */
+    private void addToMultiPageAndContinue(String imagePath) {
+        // Start MultiPageActivity with the current image
+        Intent intent = new Intent(this, MultiPageActivity.class);
+        intent.putExtra("initial_image", imagePath);
+        intent.putExtra("continue_scanning", true);
+        startActivity(intent);
+        finish();
     }
 
     /**

@@ -64,12 +64,47 @@ dependencies {
     // CameraX Extensions - optional extensions like HDR, Night mode, etc.
     implementation("androidx.camera:camera-extensions:1.3.1")
 
-    // OpenCV for Android - Image processing and computer vision
-    // Note: OpenCV requires manual SDK setup. Uncomment after adding OpenCV SDK module:
+    // ARCore - Augmented Reality for document scanning and 3D placement
+    // ARCore provides environmental understanding and motion tracking
+    implementation("com.google.ar:core:1.42.0")
+    // ARCore Extensions for SceneView (optional, for easier AR implementation)
+    implementation("io.github.sceneview:arsceneview:2.0.4")
+
+    // OpenCV for Android - Advanced image processing and computer vision
+    // OpenCV provides edge detection, perspective correction, and document analysis
+    // Using Maven Central version for easier setup (no manual SDK needed)
+    implementation("org.opencv:opencv:4.9.0")
+
+    // Alternative OpenCV (if above doesn't work, uncomment below):
+    // implementation("com.quickbirdstudios:opencv:4.5.3.0")
+
+    // Manual OpenCV SDK setup (if you prefer native performance):
     // 1. Download OpenCV Android SDK from https://opencv.org/releases/
-    // 2. Import as module in Android Studio
+    // 2. Import as module: File → New → Import Module → select OpenCV-android-sdk/sdk
     // 3. Add dependency: implementation project(':opencv')
-    // implementation("com.github.iamareebjamal:opencv-android:4.10.0")
+
+    // ML Kit - Google's machine learning library for document scanning
+    // ML Kit Text Recognition (OCR) - Extract text from documents
+    implementation("com.google.mlkit:text-recognition:16.0.0")
+    // ML Kit Document Scanner - Pre-built document scanning solution
+    implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1")
+    // ML Kit Barcode Scanning (optional, for QR codes on documents)
+    implementation("com.google.mlkit:barcode-scanning:17.2.0")
+    // ML Kit Image Labeling (optional, for document classification)
+    implementation("com.google.mlkit:image-labeling:17.0.8")
+
+    // OpenGL ES - For 3D rendering and AR visualization
+    // OpenGL ES is already included in the Android SDK
+    // No additional dependency needed - use android.opengl package directly
+
+    // TensorFlow Lite - For custom ML models (optional, advanced use)
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+
+    // Google Play Services - Required for ARCore and ML Kit
+    implementation("com.google.android.gms:play-services-vision:20.1.3")
+    implementation("com.google.android.gms:play-services-base:18.3.0")
 
     // iText PDF Library - PDF generation and manipulation
     // iText Core library for creating and editing PDFs

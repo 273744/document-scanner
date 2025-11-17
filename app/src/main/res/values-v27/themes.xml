@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- API 27+ specific attributes -->
+    <style name="Theme.MyApplication" parent="Theme.Material3.Light.NoActionBar">
+        <!-- Navigation Bar Light Mode (API 27+) -->
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>
+

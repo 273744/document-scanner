@@ -28,6 +28,9 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 
+import com.example.myapplication.database.Document;
+import com.example.myapplication.database.DocumentRepository;
+import com.example.myapplication.PdfGenerator;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -49,6 +52,7 @@ public class CameraActivity extends AppCompatActivity {
 
     private static final String TAG = "CameraActivity";
     private static final String FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS";
+    private static final int REQUEST_PREVIEW = 2001;
 
     // Camera components
     private PreviewView previewView;
@@ -393,8 +397,10 @@ public class CameraActivity extends AppCompatActivity {
      */
     private void viewLastImage() {
         if (lastCapturedFile != null && lastCapturedFile.exists()) {
-            // Launch PreviewActivity for enhancement options
-            PreviewActivity.start(this, lastCapturedFile.getAbsolutePath());
+            // Launch PreviewActivity for enhancement options with result
+            Intent intent = new Intent(this, PreviewActivity.class);
+            intent.putExtra("image_path", lastCapturedFile.getAbsolutePath());
+            startActivityForResult(intent, REQUEST_PREVIEW);
         } else {
             Toast.makeText(this, "No image to preview", Toast.LENGTH_SHORT).show();
         }
@@ -404,18 +410,45 @@ public class CameraActivity extends AppCompatActivity {
      * Show enhancement options dialog after capture
      */
     private void showEnhancementDialog(File capturedFile) {
+        // Check if we're in multi-page mode
+        boolean multiPageMode = getIntent().getBooleanExtra("multi_page_mode", false);
+        int currentPageCount = getIntent().getIntExtra("current_page_count", 0);
+
+        // Always show dialog - user should choose what to do with captured image
+        String title = multiPageMode ?
+            "Add Page " + (currentPageCount + 1) :
+            "Document Captured";
+        String message = multiPageMode ?
+            "How would you like to add this page?" :
+            "What would you like to do with this document?";
+
         new MaterialAlertDialogBuilder(this)
-                .setTitle("Document Captured")
-                .setMessage("What would you like to do with this document?")
-                .setPositiveButton("Enhance & Generate PDF", (dialog, which) -> {
-                    // Launch PreviewActivity for enhancement and PDF generation
-                    PreviewActivity.start(this, capturedFile.getAbsolutePath());
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton("Enhance & Save", (dialog, which) -> {
+                    // Launch PreviewActivity for enhancement
+                    Intent intent = new Intent(this, PreviewActivity.class);
+                    intent.putExtra("image_path", capturedFile.getAbsolutePath());
+                    if (multiPageMode) {
+                        intent.putExtra("multi_page_mode", true);
+                        intent.putExtra("page_number", currentPageCount + 1);
+                    }
+                    startActivityForResult(intent, REQUEST_PREVIEW);
                 })
                 .setNeutralButton("Crop First", (dialog, which) -> {
                     // Launch ImageCropActivity for manual cropping
-                    ImageCropActivity.startForResult(this, capturedFile.getAbsolutePath(), 1001);
+                    Intent intent = new Intent(this, ImageCropActivity.class);
+                    intent.putExtra("image_path", capturedFile.getAbsolutePath());
+                    if (multiPageMode) {
+                        intent.putExtra("multi_page_mode", true);
+                        intent.putExtra("page_number", currentPageCount + 1);
+                    }
+                    startActivityForResult(intent, REQUEST_PREVIEW);
                 })
-                .setNegativeButton("Keep As-Is", null)
+                .setNegativeButton("Keep As-Is", (dialog, which) -> {
+                    // Keep the captured image as-is - save to database and return
+                    saveImageAsIs(capturedFile, multiPageMode);
+                })
                 .setCancelable(true)
                 .show();
     }
@@ -497,6 +530,163 @@ public class CameraActivity extends AppCompatActivity {
         }
 
         return mediaDir != null && mediaDir.exists() ? mediaDir : getFilesDir();
+    }
+
+    /**
+     * Save image as-is without any processing
+     */
+    private void saveImageAsIs(File capturedFile, boolean multiPageMode) {
+        new Thread(() -> {
+            try {
+                // The file is already saved, just need to add to database
+                Document document = new Document();
+                document.setName(capturedFile.getName());
+                document.setFilePath(capturedFile.getAbsolutePath());
+                document.setCreatedDate(System.currentTimeMillis());
+                document.setFileSize(capturedFile.length());
+                document.setPageCount(1);
+                document.setTags("Captured");
+
+                DocumentRepository repository = DocumentRepository.getInstance(this);
+                repository.insert(document, success -> {
+                    Log.d(TAG, "Image saved to database (Keep As-Is): " + success);
+                });
+
+                String imagePath = capturedFile.getAbsolutePath();
+
+                // Return result
+                runOnUiThread(() -> {
+                    if (multiPageMode) {
+                        // Multi-page mode: Just add to list and return
+                        Toast.makeText(this, "✓ Page added as-is!", Toast.LENGTH_SHORT).show();
+                        Intent resultIntent = new Intent();
+                        resultIntent.putExtra("saved_image_path", imagePath);
+                        setResult(RESULT_OK, resultIntent);
+                        finish();
+                    } else {
+                        // Normal mode: Offer PDF generation option
+                        new MaterialAlertDialogBuilder(this)
+                            .setTitle("✓ Image Saved!")
+                            .setMessage("Image saved to gallery.\n\nWould you like to generate a PDF?")
+                            .setPositiveButton("Generate PDF", (dialog, which) -> {
+                                // Generate PDF from this single image
+                                generateSinglePagePdf(imagePath);
+                            })
+                            .setNeutralButton("Add More Pages", (dialog, which) -> {
+                                // Start multi-page mode with this image
+                                Intent intent = new Intent(this, MultiPageActivity.class);
+                                intent.putExtra("initial_image", imagePath);
+                                intent.putExtra("continue_scanning", true);
+                                startActivity(intent);
+                                finish();
+                            })
+                            .setNegativeButton("Done", (dialog, which) -> {
+                                // Just close and return to main
+                                finish();
+                            })
+                            .setCancelable(false)
+                            .show();
+                    }
+                });
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error saving image as-is", e);
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
+        }).start();
+    }
+
+    /**
+     * Generate PDF from a single image
+     */
+    private void generateSinglePagePdf(String imagePath) {
+        Toast.makeText(this, "Generating PDF...", Toast.LENGTH_SHORT).show();
+
+        new Thread(() -> {
+            try {
+                java.util.ArrayList<String> paths = new java.util.ArrayList<>();
+                paths.add(imagePath);
+
+                PdfGenerator.PdfOptions options = new PdfGenerator.PdfOptions()
+                        .setPageSize(PdfGenerator.PageSize.A4)
+                        .setCompressionLevel(PdfGenerator.CompressionLevel.BEST_COMPRESSION)
+                        .setImageQuality(85)
+                        .setAddTitlePage(false);
+
+                PdfGenerator.PdfMetadata metadata = new PdfGenerator.PdfMetadata()
+                        .setTitle("Scanned Document")
+                        .setAuthor("Document Scanner");
+
+                options.setMetadata(metadata);
+
+                String pdfPath = PdfGenerator.generatePdfFromImages(
+                    this,
+                    paths,
+                    getOutputDirectory().getAbsolutePath(),
+                    options
+                );
+
+                if (pdfPath != null) {
+                    // Save PDF to database
+                    File pdfFile = new File(pdfPath);
+                    Document pdfDocument = new Document();
+                    pdfDocument.setName(pdfFile.getName());
+                    pdfDocument.setFilePath(pdfPath);
+                    pdfDocument.setCreatedDate(System.currentTimeMillis());
+                    pdfDocument.setFileSize(pdfFile.length());
+                    pdfDocument.setPageCount(1);
+                    pdfDocument.setTags("PDF");
+
+                    DocumentRepository repository = DocumentRepository.getInstance(this);
+                    repository.insert(pdfDocument, success -> {
+                        Log.d(TAG, "PDF saved to database: " + success);
+                    });
+
+                    runOnUiThread(() -> {
+                        new MaterialAlertDialogBuilder(this)
+                            .setTitle("✓ PDF Created!")
+                            .setMessage("PDF generated successfully!\n\nYou can find it in the Gallery.")
+                            .setPositiveButton("View Gallery", (d, w) -> {
+                                Intent intent = new Intent(this, GalleryActivity.class);
+                                startActivity(intent);
+                                finish();
+                            })
+                            .setNegativeButton("Done", (d, w) -> finish())
+                            .show();
+                    });
+                } else {
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Failed to generate PDF", Toast.LENGTH_SHORT).show();
+                    });
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error generating PDF", e);
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
+        }).start();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        Log.d(TAG, "=== CameraActivity onActivityResult ===");
+        Log.d(TAG, "requestCode: " + requestCode + ", resultCode: " + resultCode);
+
+        if (requestCode == REQUEST_PREVIEW && resultCode == RESULT_OK && data != null) {
+            // PreviewActivity/CropActivity returned a result - forward it to our parent (MultiPageActivity)
+            String savedImagePath = data.getStringExtra("saved_image_path");
+            Log.d(TAG, "Received result: " + savedImagePath);
+            Log.d(TAG, "Forwarding to parent activity...");
+
+            setResult(RESULT_OK, data);  // Forward the same result data
+            finish();  // Close CameraActivity and return to parent
+        }
     }
 
     @Override

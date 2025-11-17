@@ -118,7 +118,7 @@ public class PdfGenerator {
         private PageSize pageSize = PageSize.A4;
         private CompressionLevel compressionLevel = CompressionLevel.BEST_COMPRESSION;
         private int imageQuality = 85; // JPEG quality 0-100
-        private boolean addTitlePage = true;
+        private boolean addTitlePage = false;  // Changed to false - users just want their scanned pages!
         private boolean addPageNumbers = false;
         private PdfMetadata metadata = new PdfMetadata();
 
@@ -188,16 +188,27 @@ public class PdfGenerator {
         }
 
         try {
+            // CRITICAL: Log what we received
+            Log.d(TAG, "=== PDF GENERATOR CALLED ===");
+            Log.d(TAG, "Received " + imagePaths.size() + " image paths:");
+            for (int i = 0; i < imagePaths.size(); i++) {
+                Log.d(TAG, "  Path[" + i + "]: " + imagePaths.get(i));
+                File f = new File(imagePaths.get(i));
+                Log.d(TAG, "    Exists: " + f.exists() + ", Size: " + f.length() + " bytes");
+            }
+            Log.d(TAG, "============================");
+
             // Generate output filename
             String timestamp = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US)
                     .format(new Date());
-            String filename = "DOC_" + timestamp + ".pdf";
+            String filename = "MultiPage_" + timestamp + ".pdf";
             File outputFile = new File(outputDir, filename);
 
             Log.d(TAG, "Creating PDF: " + outputFile.getAbsolutePath());
             Log.d(TAG, "Options - Page: " + options.pageSize +
                        ", Compression: " + options.compressionLevel +
-                       ", Quality: " + options.imageQuality + "%");
+                       ", Quality: " + options.imageQuality + "%"  +
+                       ", TitlePage: " + options.addTitlePage);
 
             // Create PDF writer with compression
             WriterProperties writerProperties = new WriterProperties()

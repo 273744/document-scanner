@@ -16,6 +16,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
+import com.example.myapplication.database.Document;
+import com.example.myapplication.database.DocumentRepository;
+import com.example.myapplication.PdfGenerator;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
@@ -45,6 +49,7 @@ public class ImageCropActivity extends AppCompatActivity {
     private String imagePath;
     private Bitmap originalBitmap;
     private File outputDirectory;
+    private DocumentRepository repository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,6 +75,9 @@ public class ImageCropActivity extends AppCompatActivity {
 
         // Create output directory
         outputDirectory = getOutputDirectory();
+
+        // Initialize repository
+        repository = DocumentRepository.getInstance(this);
     }
 
     /**
@@ -263,16 +271,60 @@ public class ImageCropActivity extends AppCompatActivity {
 
             Log.d(TAG, "Cropped image saved: " + outputFile.getAbsolutePath());
 
+            // Save to database
+            Document document = new Document();
+            document.setName(outputFile.getName());
+            document.setFilePath(outputFile.getAbsolutePath());
+            document.setCreatedDate(System.currentTimeMillis());
+            document.setFileSize(outputFile.length());
+            document.setPageCount(1);
+            document.setTags("Cropped");
+
+            repository.insert(document, success -> {
+                Log.d(TAG, "Cropped document saved to database: " + success);
+            });
+
             // Return result
             runOnUiThread(() -> {
                 showProgress(false, null);
 
-                Intent resultIntent = new Intent();
-                resultIntent.putExtra(EXTRA_CROPPED_PATH, outputFile.getAbsolutePath());
-                setResult(RESULT_OK, resultIntent);
+                String croppedPath = outputFile.getAbsolutePath();
 
-                Toast.makeText(this, "Document cropped successfully", Toast.LENGTH_SHORT).show();
-                finish();
+                // Check if we're in multi-page mode
+                boolean multiPageMode = getIntent().getBooleanExtra("multi_page_mode", false);
+
+                if (multiPageMode) {
+                    // Multi-page mode: Just return result and close
+                    Toast.makeText(this, "✓ Page cropped and added!", Toast.LENGTH_SHORT).show();
+                    Intent resultIntent = new Intent();
+                    resultIntent.putExtra(EXTRA_CROPPED_PATH, croppedPath);
+                    resultIntent.putExtra("saved_image_path", croppedPath);
+                    setResult(RESULT_OK, resultIntent);
+                    finish();
+                } else {
+                    // Normal mode: Show options dialog
+                    new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                        .setTitle("✓ Image Cropped!")
+                        .setMessage("Cropped image saved to gallery.\n\nWould you like to generate a PDF?")
+                        .setPositiveButton("Generate PDF", (dialog, which) -> {
+                            // Generate PDF from this cropped image
+                            generateSinglePagePdf(croppedPath);
+                        })
+                        .setNeutralButton("Add More Pages", (dialog, which) -> {
+                            // Start multi-page mode with this image
+                            Intent intent = new Intent(this, MultiPageActivity.class);
+                            intent.putExtra("initial_image", croppedPath);
+                            intent.putExtra("continue_scanning", true);
+                            startActivity(intent);
+                            finish();
+                        })
+                        .setNegativeButton("Done", (dialog, which) -> {
+                            // Just close and return
+                            finish();
+                        })
+                        .setCancelable(false)
+                        .show();
+                }
             });
 
         } catch (Exception e) {
@@ -305,6 +357,81 @@ public class ImageCropActivity extends AppCompatActivity {
         btnCrop.setEnabled(enabled);
         btnReset.setEnabled(enabled);
         btnCancel.setEnabled(enabled);
+    }
+
+    /**
+     * Generate PDF from a single cropped image
+     */
+    private void generateSinglePagePdf(String imagePath) {
+        showProgress(true, "Generating PDF...");
+
+        new Thread(() -> {
+            try {
+                java.util.ArrayList<String> paths = new java.util.ArrayList<>();
+                paths.add(imagePath);
+
+                PdfGenerator.PdfOptions options = new PdfGenerator.PdfOptions()
+                        .setPageSize(PdfGenerator.PageSize.A4)
+                        .setCompressionLevel(PdfGenerator.CompressionLevel.BEST_COMPRESSION)
+                        .setImageQuality(85)
+                        .setAddTitlePage(false);
+
+                PdfGenerator.PdfMetadata metadata = new PdfGenerator.PdfMetadata()
+                        .setTitle("Cropped Document")
+                        .setAuthor("Document Scanner");
+
+                options.setMetadata(metadata);
+
+                String pdfPath = PdfGenerator.generatePdfFromImages(
+                    this,
+                    paths,
+                    getOutputDirectory().getAbsolutePath(),
+                    options
+                );
+
+                if (pdfPath != null) {
+                    // Save PDF to database
+                    File pdfFile = new File(pdfPath);
+                    Document pdfDocument = new Document();
+                    pdfDocument.setName(pdfFile.getName());
+                    pdfDocument.setFilePath(pdfPath);
+                    pdfDocument.setCreatedDate(System.currentTimeMillis());
+                    pdfDocument.setFileSize(pdfFile.length());
+                    pdfDocument.setPageCount(1);
+                    pdfDocument.setTags("PDF,Cropped");
+
+                    repository.insert(pdfDocument, success -> {
+                        Log.d(TAG, "PDF saved to database: " + success);
+                    });
+
+                    runOnUiThread(() -> {
+                        showProgress(false, null);
+                        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                            .setTitle("✓ PDF Created!")
+                            .setMessage("PDF generated successfully from cropped image!\n\nYou can find it in the Gallery.")
+                            .setPositiveButton("View Gallery", (d, w) -> {
+                                Intent intent = new Intent(this, GalleryActivity.class);
+                                startActivity(intent);
+                                finish();
+                            })
+                            .setNegativeButton("Done", (d, w) -> finish())
+                            .show();
+                    });
+                } else {
+                    runOnUiThread(() -> {
+                        showProgress(false, null);
+                        Toast.makeText(this, "Failed to generate PDF", Toast.LENGTH_SHORT).show();
+                    });
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error generating PDF", e);
+                runOnUiThread(() -> {
+                    showProgress(false, null);
+                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
+        }).start();
     }
 
     /**

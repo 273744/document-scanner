@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    AR Camera Activity Layout
+
+    Features:
+    - ARCore rendering surface
+    - Custom GL overlay for document detection
+    - AR-style floating capture button
+    - Quality score indicator
+    - Document count display
+    - AR mode toggle
+    - Navigation controls
+
+    Z-ordering (bottom to top):
+    1. ARCore SurfaceView (base AR rendering)
+    2. GLSurfaceView (document overlays)
+    3. UI controls and indicators
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    tools:context=".ARCameraActivity">
+
+    <!-- ================================ -->
+    <!-- Layer 1: ARCore Surface View     -->
+    <!-- Base AR rendering surface        -->
+    <!-- ================================ -->
+
+    <SurfaceView
+        android:id="@+id/arSurfaceView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:contentDescription="@string/ar_camera_view" />
+
+    <!-- ================================ -->
+    <!-- Layer 2: GL Surface View         -->
+    <!-- Custom overlay for document UI   -->
+    <!-- ================================ -->
+
+    <android.opengl.GLSurfaceView
+        android:id="@+id/glSurfaceView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:contentDescription="@string/document_overlay" />
+
+    <!-- ================================ -->
+    <!-- Layer 3: UI Controls Overlay     -->
+    <!-- ================================ -->
+
+    <!-- Top Bar Container -->
+    <LinearLayout
+        android:id="@+id/topBarContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/gradient_top_overlay"
+        android:padding="8dp"
+        android:gravity="center_vertical"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:elevation="8dp">
+
+        <!-- Back Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBack"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/back"
+            app:icon="@drawable/ic_arrow_back"
+            app:iconTint="@android:color/white"
+            app:iconSize="24dp"
+            android:backgroundTint="#80000000" />
+
+        <!-- Spacer -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <!-- AR Mode Toggle Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnArToggle"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="@string/ar_mode"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:icon="@drawable/ic_ar_mode"
+            app:iconTint="@android:color/white"
+            app:iconSize="20dp"
+            android:backgroundTint="#80FF6B35"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginEnd="8dp"
+            android:elevation="4dp"
+            app:cornerRadius="24dp" />
+
+        <!-- Settings Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSettings"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/settings"
+            app:icon="@drawable/ic_settings"
+            app:iconTint="@android:color/white"
+            app:iconSize="24dp"
+            android:backgroundTint="#80000000" />
+
+    </LinearLayout>
+
+    <!-- ================================ -->
+    <!-- Quality Score Indicator          -->
+    <!-- Top-right corner                 -->
+    <!-- ================================ -->
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/qualityScoreCard"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="72dp"
+        android:layout_marginEnd="16dp"
+        app:cardBackgroundColor="#CC000000"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="8dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:gravity="center">
+
+            <!-- Quality Score Icon -->
+            <ImageView
+                android:id="@+id/ivQualityIcon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_quality_high"
+                android:contentDescription="@string/quality_score"
+                app:tint="@android:color/holo_green_light" />
+
+            <!-- Quality Score Text -->
+            <TextView
+                android:id="@+id/tvQualityScore"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="95%"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginTop="4dp" />
+
+            <!-- Quality Label -->
+            <TextView
+                android:id="@+id/tvQualityLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/excellent"
+                android:textColor="#AAFFFFFF"
+                android:textSize="10sp"
+                android:layout_marginTop="2dp" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ================================ -->
+    <!-- Document Count Indicator         -->
+    <!-- Below quality score              -->
+    <!-- ================================ -->
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/documentCountCard"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="16dp"
+        app:cardBackgroundColor="#CC1976D2"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="6dp"
+        app:layout_constraintTop_toBottomOf="@id/qualityScoreCard"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="10dp"
+            android:gravity="center_vertical">
+
+            <!-- Document Icon -->
+            <ImageView
+                android:id="@+id/ivDocumentIcon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_document"
+                android:contentDescription="@string/documents_found"
+                app:tint="@android:color/white" />
+
+            <!-- Document Count Text -->
+            <TextView
+                android:id="@+id/tvDocumentCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/found_2_documents"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginStart="8dp" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ================================ -->
+    <!-- AR Detection Status              -->
+    <!-- Center message area              -->
+    <!-- ================================ -->
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/arStatusCard"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:cardBackgroundColor="#CC000000"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="4dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.3"
+        android:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:gravity="center">
+
+            <!-- Status Icon -->
+            <ImageView
+                android:id="@+id/ivStatusIcon"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_ar_scan"
+                android:contentDescription="@string/ar_status"
+                app:tint="@android:color/white" />
+
+            <!-- Status Text -->
+            <TextView
+                android:id="@+id/tvArStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/point_camera_at_document"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                android:layout_marginTop="8dp"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ================================ -->
+    <!-- Bottom Controls Container        -->
+    <!-- ================================ -->
+
+    <LinearLayout
+        android:id="@+id/bottomControlsContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/gradient_bottom_overlay"
+        android:padding="16dp"
+        android:gravity="center"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:elevation="8dp">
+
+        <!-- AR Tracking Indicator -->
+        <LinearLayout
+            android:id="@+id/trackingIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:padding="8dp"
+            android:background="@drawable/rounded_background"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone">
+
+            <!-- Tracking Status Dot -->
+            <View
+                android:id="@+id/trackingDot"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:background="@drawable/circle_shape"
+                android:backgroundTint="@android:color/holo_green_light" />
+
+            <!-- Tracking Status Text -->
+            <TextView
+                android:id="@+id/tvTrackingStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/tracking"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:layout_marginStart="8dp" />
+
+        </LinearLayout>
+
+        <!-- Capture Button Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <!-- Gallery Thumbnail Button -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/btnGalleryThumbnail"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                android:layout_marginEnd="32dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/ivGalleryThumbnail"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_gallery_placeholder"
+                    android:contentDescription="@string/gallery" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Main AR Capture Button -->
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/btnArCapture"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/capture_document"
+                app:fabSize="normal"
+                app:fabCustomSize="80dp"
+                app:backgroundTint="@android:color/white"
+                app:tint="@android:color/holo_blue_dark"
+                app:srcCompat="@drawable/ic_ar_camera"
+                app:elevation="12dp"
+                app:borderWidth="4dp"
+                app:rippleColor="@android:color/holo_blue_light"
+                android:scaleX="1"
+                android:scaleY="1" />
+
+            <!-- Flash Toggle Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFlashToggle"
+                style="@style/Widget.Material3.Button.IconButton.Filled"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginStart="32dp"
+                android:contentDescription="@string/flash"
+                app:icon="@drawable/ic_flash_off"
+                app:iconTint="@android:color/white"
+                app:iconSize="28dp"
+                app:backgroundTint="#80000000"
+                app:cornerRadius="28dp"
+                app:elevation="4dp" />
+
+        </LinearLayout>
+
+        <!-- AR Instructions -->
+        <TextView
+            android:id="@+id/tvArInstructions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/move_camera_to_detect_document"
+            android:textColor="#CCFFFFFF"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:layout_marginTop="12dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp" />
+
+    </LinearLayout>
+
+    <!-- ================================ -->
+    <!-- FPS Counter (Debug)              -->
+    <!-- Bottom-left corner               -->
+    <!-- ================================ -->
+
+    <TextView
+        android:id="@+id/tvFpsCounter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
+        android:text="FPS: 60"
+        android:textColor="#AAFFFFFF"
+        android:textSize="12sp"
+        android:background="#80000000"
+        android:padding="8dp"
+        android:fontFamily="monospace"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <!-- ================================ -->
+    <!-- Progress Indicator               -->
+    <!-- For AR initialization            -->
+    <!-- ================================ -->
+
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/progressIndicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        app:indicatorColor="@android:color/white"
+        app:trackColor="#40FFFFFF"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:visibility="gone" />
+
+    <!-- Progress Text -->
+    <TextView
+        android:id="@+id/tvProgressText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/initializing_ar"
+        android:textColor="@android:color/white"
+        android:textSize="14sp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/progressIndicator"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:visibility="gone" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+

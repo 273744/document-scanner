@@ -2,27 +2,91 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Camera permission for document capture -->
+    <!-- ================================== -->
+    <!-- CAMERA PERMISSIONS                -->
+    <!-- ================================== -->
+
+    <!-- Camera permission - REQUIRED for document scanning -->
     <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Camera hardware requirement - marked as required=true for core functionality -->
     <uses-feature
         android:name="android.hardware.camera"
+        android:required="true" />
+
+    <!-- Camera with autofocus - STRONGLY RECOMMENDED for better document scanning -->
+    <!-- Set to required=false to allow devices without autofocus -->
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
         android:required="false" />
+
+    <!-- ================================== -->
+    <!-- ARCORE PERMISSIONS & FEATURES      -->
+    <!-- ================================== -->
+
+    <!-- ARCore camera features - for AR document scanning -->
+    <!-- Set to required=false to allow app on non-ARCore devices -->
+    <uses-feature
+        android:name="android.hardware.camera.ar"
+        android:required="false" />
+
+    <!-- ================================== -->
+    <!-- OPENGL ES REQUIREMENTS             -->
+    <!-- ================================== -->
+
+    <!-- OpenGL ES 3.0 - Required for ARCore and advanced rendering -->
+    <!-- 0x00030000 = OpenGL ES 3.0 -->
+    <!-- Set to required=false for backward compatibility with OpenGL ES 2.0 devices -->
+    <uses-feature
+        android:glEsVersion="0x00030000"
+        android:required="false" />
+
+    <!-- Note: OpenGL ES 2.0 (0x00020000) is the minimum for basic features -->
+
+    <!-- ================================== -->
+    <!-- STORAGE PERMISSIONS                -->
+    <!-- ================================== -->
 
     <!-- Storage permissions for saving and reading documents -->
     <!-- For Android 10 (API 29) and below -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
     <!-- For Android 13 (API 33) and above - Granular media permissions -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
-    <!-- Internet permission for future cloud features -->
+    <!-- ================================== -->
+    <!-- NETWORK PERMISSIONS                -->
+    <!-- ================================== -->
+
+    <!-- Internet permission for cloud features, ARCore updates, and ML Kit models -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Optional: Access network state for checking connectivity -->
+    <!-- Access network state for checking connectivity -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- ================================== -->
+    <!-- HAPTIC FEEDBACK PERMISSION         -->
+    <!-- ================================== -->
+
+    <!-- Vibrate permission for AR guidance haptic feedback -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- ================================== -->
+    <!-- OPTIONAL AR FEATURES               -->
+    <!-- ================================== -->
+
+    <!-- Motion sensors for AR tracking (optional) -->
+    <uses-feature
+        android:name="android.hardware.sensor.accelerometer"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.sensor.gyroscope"
+        android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -121,6 +185,18 @@
                 android:value=".GalleryActivity" />
         </activity>
 
+        <!-- PDF Viewer Activity - Built-in PDF viewer -->
+        <activity
+            android:name=".PdfViewerActivity"
+            android:exported="false"
+            android:label="PDF Viewer"
+            android:parentActivityName=".GalleryActivity"
+            android:theme="@style/Theme.MyApplication">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".GalleryActivity" />
+        </activity>
+
         <!-- FileProvider for sharing PDFs and documents -->
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -131,6 +207,87 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_provider_paths" />
         </provider>
+
+        <!-- ================================== -->
+        <!-- ARCORE METADATA                    -->
+        <!-- ================================== -->
+
+        <!-- ARCore Configuration -->
+        <!--
+            Value options:
+            - "required" = App only available on ARCore-supported devices
+            - "optional" = App available on all devices, AR features gracefully disabled
+
+            Recommendation: Use "optional" for wider device compatibility
+        -->
+        <meta-data
+            android:name="com.google.ar.core"
+            android:value="optional" />
+
+        <!-- ARCore Session Features -->
+        <!-- Enable specific ARCore features -->
+        <meta-data
+            android:name="com.google.ar.core.session_feature"
+            android:value="shared_camera" />
+
+        <!-- ================================== -->
+        <!-- GOOGLE PLAY SERVICES METADATA      -->
+        <!-- ================================== -->
+
+        <!-- Google Play Services Version (required for ML Kit and ARCore) -->
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
+
+        <!-- ================================== -->
+        <!-- ML KIT METADATA (Optional)         -->
+        <!-- ================================== -->
+
+        <!--
+            ML Kit can download models on-demand or bundle them with the app
+            Options:
+            - Download on-demand: Smaller APK, requires internet first time
+            - Bundle with app: Larger APK, works offline immediately
+        -->
+
+        <!-- Text Recognition Model Configuration -->
+        <!-- Uncomment to bundle text recognition model with app (adds ~10MB) -->
+        <!--
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr" />
+        -->
+
+        <!-- Document Scanner Model Configuration -->
+        <!-- Uncomment to bundle document scanner model with app (adds ~15MB) -->
+        <!--
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="document_scanner" />
+        -->
+
+        <!-- Barcode Scanning Model Configuration -->
+        <!-- Uncomment to bundle barcode model with app (adds ~2MB) -->
+        <!--
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="barcode" />
+        -->
+
+        <!-- ================================== -->
+        <!-- PERFORMANCE OPTIMIZATIONS          -->
+        <!-- ================================== -->
+
+        <!-- Enable hardware acceleration for better performance -->
+        <meta-data
+            android:name="android.hardware.vulkan.level"
+            android:value="1" />
+
+        <!-- Support for large heap (useful for image processing) -->
+        <!-- This allows the app to use more memory for processing large images -->
+        <meta-data
+            android:name="android.app.extra_large_heap"
+            android:value="true" />
 
     </application>
 
