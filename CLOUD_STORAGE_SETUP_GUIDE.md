@@ -7,11 +7,11 @@ Complete cloud storage integration for Google Drive and Dropbox with secure API 
 
 ### 1. Google Drive API
 ```gradle
-implementation("com.google.apis:google-api-services-drive:v3-rev20231212-2.0.0")
-implementation("com.google.api-client:google-api-client-android:2.2.0")
-implementation("com.google.http-client:google-http-client-android:1.44.1")
+implementation("com.google.apis:google-api-services-drive:v3-rev20220815-2.0.0")
+implementation("com.google.api-client:google-api-client-android:2.0.0")
+implementation("com.google.http-client:google-http-client-android:1.42.3")
 implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
-implementation("com.google.api-client:google-api-client-gson:2.2.0")
+implementation("com.google.api-client:google-api-client-gson:2.0.0")
 ```
 
 ### 2. Google Sign-In (Authentication)
