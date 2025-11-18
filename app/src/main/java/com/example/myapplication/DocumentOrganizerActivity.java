@@ -145,7 +145,8 @@ public class DocumentOrganizerActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_document_organizer);
+        // TODO: Create activity_document_organizer.xml layout
+        // setContentView(R.layout.activity_document_organizer);
 
         // Setup toolbar
         if (getSupportActionBar() != null) {
@@ -157,25 +158,25 @@ public class DocumentOrganizerActivity extends AppCompatActivity {
         folderRepository = new FolderRepository(this);
         documentRepository = DocumentRepository.getInstance(this);
 
-        // Initialize views
-        initializeViews();
+        // Temporary: Show message that UI is pending
+        Toast.makeText(this, "Document Organizer - Layout pending implementation", Toast.LENGTH_LONG).show();
+        finish();
 
-        // Setup RecyclerViews
-        setupFolderTreeView();
-        setupDocumentsView();
-
-        // Setup FABs
-        setupFabs();
-
-        // Load data
-        loadFolderTree();
-        loadRootDocuments();
+        // Initialize views - commented out until layouts are created
+        // initializeViews();
+        // setupFolderTreeView();
+        // setupDocumentsView();
+        // setupFabs();
+        // loadFolderTree();
+        // loadRootDocuments();
     }
 
     /**
      * Initialize views
      */
     private void initializeViews() {
+        // TODO: Uncomment when layout XML is created
+        /*
         rvFolderTree = findViewById(R.id.rvFolderTree);
         rvDocuments = findViewById(R.id.rvDocuments);
         fabNewFolder = findViewById(R.id.fabNewFolder);
@@ -186,6 +187,7 @@ public class DocumentOrganizerActivity extends AppCompatActivity {
         tvCurrentPath = findViewById(R.id.tvCurrentPath);
         chipSelectedCount = findViewById(R.id.chipSelectedCount);
         chipSelectionCount = findViewById(R.id.chipSelectionCount);
+        */
     }
 
     /**
@@ -545,6 +547,10 @@ public class DocumentOrganizerActivity extends AppCompatActivity {
      * Show folder color picker
      */
     private void showFolderColorPicker(Folder folder) {
+        // TODO: Create bottom_sheet_color_picker.xml layout
+        Toast.makeText(this, "Color picker - Layout pending implementation", Toast.LENGTH_SHORT).show();
+
+        /* Uncomment when layout is created
         BottomSheetDialog bottomSheet = new BottomSheetDialog(this);
         View view = getLayoutInflater().inflate(R.layout.bottom_sheet_color_picker, null);
 
@@ -563,6 +569,7 @@ public class DocumentOrganizerActivity extends AppCompatActivity {
 
         bottomSheet.setContentView(view);
         bottomSheet.show();
+        */
     }
 
     /**
@@ -941,8 +948,10 @@ public class DocumentOrganizerActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_document_organizer, menu);
+        // TODO: Create menu_document_organizer.xml
+        // getMenuInflater().inflate(R.menu.menu_document_organizer, menu);
 
+        /* Uncomment when menu XML is created
         MenuItem searchItem = menu.findItem(R.id.action_search);
         SearchView searchView = (SearchView) searchItem.getActionView();
 
@@ -958,6 +967,7 @@ public class DocumentOrganizerActivity extends AppCompatActivity {
                 return true;
             }
         });
+        */
 
         return true;
     }
@@ -967,7 +977,10 @@ public class DocumentOrganizerActivity extends AppCompatActivity {
         if (item.getItemId() == android.R.id.home) {
             onBackPressed();
             return true;
-        } else if (item.getItemId() == R.id.action_bulk_operations) {
+        }
+        // TODO: Add menu items when menu XML is created
+        /*
+        else if (item.getItemId() == R.id.action_bulk_operations) {
             showBulkOperationsMenu();
             return true;
         } else if (item.getItemId() == R.id.action_refresh) {
@@ -975,6 +988,7 @@ public class DocumentOrganizerActivity extends AppCompatActivity {
             loadDocumentsInFolder(currentFolderId);
             return true;
         }
+        */
         return super.onOptionsItemSelected(item);
     }
 
@@ -1049,7 +1063,9 @@ public class DocumentOrganizerActivity extends AppCompatActivity {
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = getLayoutInflater().inflate(R.layout.item_folder_tree, parent, false);
+            // TODO: Create item_folder_tree.xml layout
+            // View view = getLayoutInflater().inflate(R.layout.item_folder_tree, parent, false);
+            View view = new View(parent.getContext());
             return new ViewHolder(view);
         }
 
@@ -1074,16 +1090,22 @@ public class DocumentOrganizerActivity extends AppCompatActivity {
 
             ViewHolder(@NonNull View itemView) {
                 super(itemView);
+                // TODO: Uncomment when layout is created
+                /*
                 tvFolderName = itemView.findViewById(R.id.tvFolderName);
                 tvDocCount = itemView.findViewById(R.id.tvDocCount);
                 ivFolderIcon = itemView.findViewById(R.id.ivFolderIcon);
                 ivExpandCollapse = itemView.findViewById(R.id.ivExpandCollapse);
                 indentView = itemView.findViewById(R.id.indentView);
                 cardFolder = itemView.findViewById(R.id.cardFolder);
+                */
             }
 
             void bind(FolderTreeNode node) {
                 Folder folder = node.folder;
+
+                // TODO: Implement binding when layout views are available
+                if (tvFolderName == null) return;
 
                 // Set folder name
                 tvFolderName.setText(folder.getFolderName());
@@ -1171,7 +1193,9 @@ public class DocumentOrganizerActivity extends AppCompatActivity {
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = getLayoutInflater().inflate(R.layout.item_document_organizer, parent, false);
+            // TODO: Create item_document_organizer.xml layout
+            // View view = getLayoutInflater().inflate(R.layout.item_document_organizer, parent, false);
+            View view = new View(parent.getContext());
             return new ViewHolder(view);
         }
 
@@ -1196,15 +1220,21 @@ public class DocumentOrganizerActivity extends AppCompatActivity {
 
             ViewHolder(@NonNull View itemView) {
                 super(itemView);
+                // TODO: Uncomment when layout is created
+                /*
                 tvDocName = itemView.findViewById(R.id.tvDocName);
                 tvDocDate = itemView.findViewById(R.id.tvDocDate);
                 tvDocType = itemView.findViewById(R.id.tvDocType);
                 ivDocIcon = itemView.findViewById(R.id.ivDocIcon);
                 ivCheckbox = itemView.findViewById(R.id.ivCheckbox);
                 cardDocument = itemView.findViewById(R.id.cardDocument);
+                */
             }
 
             void bind(Document document) {
+                // TODO: Implement binding when layout views are available
+                if (tvDocName == null) return;
+
                 tvDocName.setText(document.getDocumentName());
 
                 SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
