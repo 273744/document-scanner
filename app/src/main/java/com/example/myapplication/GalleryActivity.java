@@ -565,7 +565,7 @@ public class GalleryActivity extends AppCompatActivity implements DocumentGaller
             executorService.shutdown();
         }
     }
-}
+
     /**
      * Static method to start this activity
      */

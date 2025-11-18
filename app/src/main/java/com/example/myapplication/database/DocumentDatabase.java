@@ -11,8 +11,20 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 /**
  * DocumentDatabase - Room database for document management
  * Handles database creation, version management, and migrations
+ *
+ * Note: This is the OLD database class. The new Room database is in AppDatabase.java
+ * This class is kept for backward compatibility with existing DocumentRepository
  */
-@Database(entities = {Document.class}, version = 1, exportSchema = false)
+@Database(
+    entities = {
+        Document.class,
+        Folder.class,
+        Tag.class,
+        DocumentTag.class
+    },
+    version = 1,
+    exportSchema = false
+)
 public abstract class DocumentDatabase extends RoomDatabase {
 
     private static final String DATABASE_NAME = "document_scanner_db";
@@ -23,6 +35,24 @@ public abstract class DocumentDatabase extends RoomDatabase {
      * @return DocumentDao instance
      */
     public abstract DocumentDao documentDAO();
+
+    /**
+     * Get FolderDao
+     * @return FolderDao instance
+     */
+    public abstract FolderDao folderDao();
+
+    /**
+     * Get TagDao
+     * @return TagDao instance
+     */
+    public abstract TagDao tagDao();
+
+    /**
+     * Get DocumentTagDao
+     * @return DocumentTagDao instance
+     */
+    public abstract DocumentTagDao documentTagDao();
 
     /**
      * Get database instance (Singleton pattern)
