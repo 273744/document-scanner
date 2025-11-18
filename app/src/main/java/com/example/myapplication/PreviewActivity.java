@@ -427,12 +427,14 @@ public class PreviewActivity extends AppCompatActivity implements FilterAdapter.
 
                 // Save to database
                 Document document = new Document();
-                document.setName(outputFile.getName());
+                document.setDocumentName(outputFile.getName());
                 document.setFilePath(savedPath);
-                document.setCreatedDate(System.currentTimeMillis());
+                document.setCreatedAt(System.currentTimeMillis());
                 document.setFileSize(outputFile.length());
                 document.setPageCount(1);
-                document.setTags(currentFilter.getDisplayName());
+                document.setFileType("IMAGE");
+                // Note: Filter name can be stored in description or notes
+                document.setDescription("Filter: " + currentFilter.getDisplayName());
 
                 repository.insert(document, success -> {
                     Log.d(TAG, "Document saved to database: " + success);
@@ -509,12 +511,12 @@ public class PreviewActivity extends AppCompatActivity implements FilterAdapter.
                     // Save PDF to database
                     File pdfFile = new File(pdfPath);
                     Document pdfDocument = new Document();
-                    pdfDocument.setName(pdfFile.getName());
+                    pdfDocument.setDocumentName(pdfFile.getName());
                     pdfDocument.setFilePath(pdfPath);
-                    pdfDocument.setCreatedDate(System.currentTimeMillis());
+                    pdfDocument.setCreatedAt(System.currentTimeMillis());
                     pdfDocument.setFileSize(pdfFile.length());
                     pdfDocument.setPageCount(1);
-                    pdfDocument.setTags("PDF");
+                    pdfDocument.setFileType("PDF");
 
                     repository.insert(pdfDocument, success -> {
                         Log.d(TAG, "PDF saved to database: " + success);

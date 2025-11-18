@@ -18,6 +18,8 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import com.example.myapplication.database.Document;
 import com.example.myapplication.database.DocumentRepository;
@@ -58,6 +60,7 @@ public class GalleryActivity extends AppCompatActivity implements DocumentGaller
     private LiveData<List<Document>> currentDocuments;
     private List<Document> allDocuments = new ArrayList<>();
     private SortOption currentSort = SortOption.DATE_DESC;
+    private ExecutorService executorService;
 
     // Sort options
     public enum SortOption {
@@ -92,6 +95,7 @@ public class GalleryActivity extends AppCompatActivity implements DocumentGaller
 
         // Initialize repository
         repository = DocumentRepository.getInstance(this);
+        executorService = Executors.newSingleThreadExecutor();
 
         // Initialize views
         initializeViews();
@@ -165,22 +169,22 @@ public class GalleryActivity extends AppCompatActivity implements DocumentGaller
         switch (currentSort) {
             case DATE_DESC:
                 Collections.sort(allDocuments, (d1, d2) ->
-                    Long.compare(d2.getCreatedDate(), d1.getCreatedDate()));
+                    Long.compare(d2.getCreatedAt(), d1.getCreatedAt()));
                 break;
 
             case DATE_ASC:
                 Collections.sort(allDocuments, (d1, d2) ->
-                    Long.compare(d1.getCreatedDate(), d2.getCreatedDate()));
+                    Long.compare(d1.getCreatedAt(), d2.getCreatedAt()));
                 break;
 
             case NAME_ASC:
                 Collections.sort(allDocuments, (d1, d2) ->
-                    d1.getName().compareToIgnoreCase(d2.getName()));
+                    d1.getDocumentName().compareToIgnoreCase(d2.getDocumentName()));
                 break;
 
             case NAME_DESC:
                 Collections.sort(allDocuments, (d1, d2) ->
-                    d2.getName().compareToIgnoreCase(d1.getName()));
+                    d2.getDocumentName().compareToIgnoreCase(d1.getDocumentName()));
                 break;
 
             case SIZE_ASC:
@@ -260,7 +264,7 @@ public class GalleryActivity extends AppCompatActivity implements DocumentGaller
         };
 
         new MaterialAlertDialogBuilder(this)
-                .setTitle(document.getName())
+                .setTitle(document.getDocumentName())
                 .setItems(options, (dialog, which) -> {
                     switch (which) {
                         case 0: // Open
@@ -288,8 +292,8 @@ public class GalleryActivity extends AppCompatActivity implements DocumentGaller
      */
     private void showRenameDialog(Document document) {
         android.widget.EditText input = new android.widget.EditText(this);
-        input.setText(document.getName());
-        input.setSelection(document.getName().length());
+        input.setText(document.getDocumentName());
+        input.setSelection(document.getDocumentName().length());
 
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Rename Document")
@@ -308,13 +312,19 @@ public class GalleryActivity extends AppCompatActivity implements DocumentGaller
      * Rename document
      */
     private void renameDocument(Document document, String newName) {
-        repository.updateDocumentName(document.getId(), newName, success -> {
-            if (success) {
-                runOnUiThread(() -> {
-                    Toast.makeText(this, "Renamed to: " + newName,
-                        Toast.LENGTH_SHORT).show();
-                });
-            }
+        // Update document name in database
+        executorService.execute(() -> {
+            document.setDocumentName(newName);
+            document.setModifiedAt(System.currentTimeMillis());
+            repository.update(document, success -> {
+                if (success) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Renamed to: " + newName,
+                            Toast.LENGTH_SHORT).show();
+                        loadDocuments(); // Reload to reflect changes
+                    });
+                }
+            });
         });
     }
 
@@ -323,7 +333,10 @@ public class GalleryActivity extends AppCompatActivity implements DocumentGaller
      */
     private void toggleFavorite(Document document) {
         boolean newStatus = !document.isFavorite();
-        repository.updateFavoriteStatus(document.getId(), newStatus, success -> {
+        document.setFavorite(newStatus);
+        document.setModifiedAt(System.currentTimeMillis());
+
+        repository.update(document, success -> {
             if (success) {
                 runOnUiThread(() -> {
                     String message = newStatus ? "Added to favorites" : "Removed from favorites";
@@ -338,7 +351,7 @@ public class GalleryActivity extends AppCompatActivity implements DocumentGaller
      */
     private void shareDocument(Document document) {
         // TODO: Implement sharing functionality
-        Toast.makeText(this, "Share: " + document.getName(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Share: " + document.getDocumentName(), Toast.LENGTH_SHORT).show();
     }
 
     /**
@@ -347,7 +360,7 @@ public class GalleryActivity extends AppCompatActivity implements DocumentGaller
     private void showDeleteConfirmation(Document document) {
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Delete Document")
-                .setMessage("Are you sure you want to delete \"" + document.getName() + "\"?")
+                .setMessage("Are you sure you want to delete \"" + document.getDocumentName() + "\"?")
                 .setPositiveButton("Delete", (dialog, which) -> {
                     deleteDocument(document);
                 })
@@ -545,6 +558,14 @@ public class GalleryActivity extends AppCompatActivity implements DocumentGaller
         }
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (executorService != null) {
+            executorService.shutdown();
+        }
+    }
+}
     /**
      * Static method to start this activity
      */

@@ -96,7 +96,8 @@ public class CloudSettingsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_cloud_settings);
+        // TODO: Create activity_cloud_settings.xml layout
+        // setContentView(R.layout.activity_cloud_settings);
 
         // Initialize managers
         authManager = new CloudAuthManager(this);
@@ -104,16 +105,20 @@ public class CloudSettingsActivity extends AppCompatActivity {
         syncService = new CloudSyncService(this);
 
         // Initialize views
-        initializeViews();
+        // initializeViews();
 
         // Setup toolbar
-        setupToolbar();
+        // setupToolbar();
 
         // Load current settings
-        loadSettings();
+        // loadSettings();
 
         // Setup listeners
-        setupListeners();
+        // setupListeners();
+
+        // Temporary: Show toast that layout is not implemented yet
+        android.widget.Toast.makeText(this, "Cloud Settings UI - Layout pending implementation", android.widget.Toast.LENGTH_LONG).show();
+        finish();
     }
 
     // ================================
@@ -121,6 +126,9 @@ public class CloudSettingsActivity extends AppCompatActivity {
     // ================================
 
     private void initializeViews() {
+        // TODO: Implement when layout XML is created
+        return;
+        /*
         // Provider Selection
         chipGroupProviders = findViewById(R.id.chipGroupProviders);
         chipGoogleDrive = findViewById(R.id.chipGoogleDrive);
@@ -163,6 +171,7 @@ public class CloudSettingsActivity extends AppCompatActivity {
         switchWifiOnly = findViewById(R.id.switchWifiOnly);
         switchBackupOnCharging = findViewById(R.id.switchBackupOnCharging);
         switchBackupLargeFiles = findViewById(R.id.switchBackupLargeFiles);
+        */
     }
 
     private void setupToolbar() {
@@ -179,6 +188,8 @@ public class CloudSettingsActivity extends AppCompatActivity {
     // ================================
 
     private void setupProviderSelection() {
+        // TODO: Implement when layout is ready
+        /*
         chipGroupProviders.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.chipGoogleDrive) {
                 selectProvider(CloudStorageManager.CloudProvider.GOOGLE_DRIVE);
@@ -197,6 +208,7 @@ public class CloudSettingsActivity extends AppCompatActivity {
                 chipDropbox.setChecked(true);
             }
         }
+        */
     }
 
     private void selectProvider(CloudStorageManager.CloudProvider provider) {
@@ -717,7 +729,8 @@ public class CloudSettingsActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_cloud_settings, menu);
+        // TODO: Create menu_cloud_settings.xml
+        // getMenuInflater().inflate(R.menu.menu_cloud_settings, menu);
         return true;
     }
 
@@ -726,10 +739,12 @@ public class CloudSettingsActivity extends AppCompatActivity {
         if (item.getItemId() == android.R.id.home) {
             onBackPressed();
             return true;
-        } else if (item.getItemId() == R.id.action_help) {
-            showHelpDialog();
-            return true;
         }
+        // TODO: Add menu items when menu XML is created
+        // else if (item.getItemId() == R.id.action_help) {
+        //     showHelpDialog();
+        //     return true;
+        // }
         return super.onOptionsItemSelected(item);
     }
 

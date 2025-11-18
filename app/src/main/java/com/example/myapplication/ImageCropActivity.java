@@ -273,12 +273,13 @@ public class ImageCropActivity extends AppCompatActivity {
 
             // Save to database
             Document document = new Document();
-            document.setName(outputFile.getName());
+            document.setDocumentName(outputFile.getName());
             document.setFilePath(outputFile.getAbsolutePath());
-            document.setCreatedDate(System.currentTimeMillis());
+            document.setCreatedAt(System.currentTimeMillis());
             document.setFileSize(outputFile.length());
             document.setPageCount(1);
-            document.setTags("Cropped");
+            document.setFileType("IMAGE");
+            document.setDescription("Cropped image");
 
             repository.insert(document, success -> {
                 Log.d(TAG, "Cropped document saved to database: " + success);
@@ -393,12 +394,13 @@ public class ImageCropActivity extends AppCompatActivity {
                     // Save PDF to database
                     File pdfFile = new File(pdfPath);
                     Document pdfDocument = new Document();
-                    pdfDocument.setName(pdfFile.getName());
+                    pdfDocument.setDocumentName(pdfFile.getName());
                     pdfDocument.setFilePath(pdfPath);
-                    pdfDocument.setCreatedDate(System.currentTimeMillis());
+                    pdfDocument.setCreatedAt(System.currentTimeMillis());
                     pdfDocument.setFileSize(pdfFile.length());
                     pdfDocument.setPageCount(1);
-                    pdfDocument.setTags("PDF,Cropped");
+                    pdfDocument.setFileType("PDF");
+                    pdfDocument.setDescription("Cropped PDF");
 
                     repository.insert(pdfDocument, success -> {
                         Log.d(TAG, "PDF saved to database: " + success);

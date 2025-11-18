@@ -19,10 +19,10 @@ public abstract class DocumentDatabase extends RoomDatabase {
     private static DocumentDatabase instance;
 
     /**
-     * Get DocumentDAO
-     * @return DocumentDAO instance
+     * Get DocumentDao
+     * @return DocumentDao instance
      */
-    public abstract DocumentDAO documentDAO();
+    public abstract DocumentDao documentDAO();
 
     /**
      * Get database instance (Singleton pattern)

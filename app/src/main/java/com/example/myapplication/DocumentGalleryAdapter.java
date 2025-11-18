@@ -65,10 +65,10 @@ public class DocumentGalleryAdapter extends RecyclerView.Adapter<DocumentGallery
         Document document = documents.get(position);
 
         // Set document name
-        holder.tvDocumentName.setText(document.getName());
+        holder.tvDocumentName.setText(document.getDocumentName());
 
         // Set date
-        String dateStr = formatDate(document.getCreatedDate());
+        String dateStr = formatDate(document.getCreatedAt());
         holder.tvDate.setText(dateStr);
 
         // Set file size

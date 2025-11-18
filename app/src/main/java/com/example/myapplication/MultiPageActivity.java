@@ -413,12 +413,13 @@ public class MultiPageActivity extends AppCompatActivity implements PageAdapter.
                     // Save PDF to database
                     File pdfFile = new File(generatedPdfPath);
                     Document pdfDocument = new Document();
-                    pdfDocument.setName(pdfFile.getName());
+                    pdfDocument.setDocumentName(pdfFile.getName());
                     pdfDocument.setFilePath(generatedPdfPath);
-                    pdfDocument.setCreatedDate(System.currentTimeMillis());
+                    pdfDocument.setCreatedAt(System.currentTimeMillis());
                     pdfDocument.setFileSize(pdfFile.length());
                     pdfDocument.setPageCount(imagePaths.size());
-                    pdfDocument.setTags("Multi-Page PDF");
+                    pdfDocument.setFileType("PDF");
+                    pdfDocument.setDescription("Multi-page PDF document");
 
                     repository.insert(pdfDocument, success -> {
                         Log.d(TAG, "Multi-page PDF saved to database: " + success);

@@ -20,7 +20,7 @@ public class DocumentRepository {
     private static final String TAG = "DocumentRepository";
     private static DocumentRepository instance;
 
-    private final DocumentDAO documentDAO;
+    private final DocumentDao documentDAO;
     private final ExecutorService executorService;
     private final LiveData<List<Document>> allDocuments;
     private final LiveData<Integer> documentCount;
@@ -423,9 +423,9 @@ public class DocumentRepository {
                 }
             }
 
-            // Delete PDF
-            if (document.getPdfPath() != null) {
-                File pdfFile = new File(document.getPdfPath());
+            // Delete PDF file if it's a PDF document
+            if ("PDF".equals(document.getFileType()) && document.getFilePath() != null) {
+                File pdfFile = new File(document.getFilePath());
                 if (pdfFile.exists()) {
                     pdfFile.delete();
                 }

@@ -166,7 +166,7 @@ public class DocumentViewerActivity extends AppCompatActivity {
      */
     private void setupDocument(Document document) {
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle(document.getName());
+            getSupportActionBar().setTitle(document.getDocumentName());
         }
 
         // Load all pages
@@ -299,7 +299,7 @@ public class DocumentViewerActivity extends AppCompatActivity {
             shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri);
             shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-            String title = currentDocument != null ? currentDocument.getName() : "Document";
+            String title = currentDocument != null ? currentDocument.getDocumentName() : "Document";
             shareIntent.putExtra(Intent.EXTRA_SUBJECT, title);
             shareIntent.putExtra(Intent.EXTRA_TEXT, "Sharing document: " + title);
 
@@ -323,7 +323,7 @@ public class DocumentViewerActivity extends AppCompatActivity {
         // Navigate to PreviewActivity for editing
         Intent intent = new Intent(this, PreviewActivity.class);
         intent.putExtra("image_path", imagePaths.get(currentPage));
-        intent.putExtra("document_id", currentDocument.getId());
+        intent.putExtra("document_id", currentDocument.getDocumentId());
         startActivityForResult(intent, REQUEST_EDIT);
     }
 
@@ -336,7 +336,7 @@ public class DocumentViewerActivity extends AppCompatActivity {
             return;
         }
 
-        String documentName = currentDocument.getName();
+        String documentName = currentDocument.getDocumentName();
 
         new MaterialAlertDialogBuilder(this)
             .setTitle("Delete Document")
@@ -381,13 +381,15 @@ public class DocumentViewerActivity extends AppCompatActivity {
         }
 
         StringBuilder info = new StringBuilder();
-        info.append("Name: ").append(currentDocument.getName()).append("\n\n");
+        info.append("Name: ").append(currentDocument.getDocumentName()).append("\n\n");
         info.append("Pages: ").append(currentDocument.getPageCount()).append("\n\n");
         info.append("Size: ").append(formatFileSize(currentDocument.getFileSize())).append("\n\n");
-        info.append("Created: ").append(formatDate(currentDocument.getCreatedDate())).append("\n\n");
+        info.append("Created: ").append(formatDate(currentDocument.getCreatedAt())).append("\n\n");
 
-        if (currentDocument.getTags() != null && !currentDocument.getTags().isEmpty()) {
-            info.append("Tags: ").append(currentDocument.getTags()).append("\n\n");
+        // Note: Tags are now in separate junction table, would need to query DocumentWithTags
+        // For now, show description if available
+        if (currentDocument.getDescription() != null && !currentDocument.getDescription().isEmpty()) {
+            info.append("Description: ").append(currentDocument.getDescription()).append("\n\n");
         }
 
         info.append("Path: ").append(currentDocument.getFilePath());
@@ -426,7 +428,7 @@ public class DocumentViewerActivity extends AppCompatActivity {
         if (requestCode == REQUEST_EDIT && resultCode == RESULT_OK) {
             // Reload document after editing
             if (currentDocument != null) {
-                loadDocumentById(currentDocument.getId());
+                loadDocumentById(currentDocument.getDocumentId());
             }
         }
     }

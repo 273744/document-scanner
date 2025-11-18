@@ -540,12 +540,13 @@ public class CameraActivity extends AppCompatActivity {
             try {
                 // The file is already saved, just need to add to database
                 Document document = new Document();
-                document.setName(capturedFile.getName());
+                document.setDocumentName(capturedFile.getName());
                 document.setFilePath(capturedFile.getAbsolutePath());
-                document.setCreatedDate(System.currentTimeMillis());
+                document.setCreatedAt(System.currentTimeMillis());
                 document.setFileSize(capturedFile.length());
                 document.setPageCount(1);
-                document.setTags("Captured");
+                document.setFileType("IMAGE");
+                // Note: Tags are now stored separately via DocumentTag junction table
 
                 DocumentRepository repository = DocumentRepository.getInstance(this);
                 repository.insert(document, success -> {
@@ -632,12 +633,13 @@ public class CameraActivity extends AppCompatActivity {
                     // Save PDF to database
                     File pdfFile = new File(pdfPath);
                     Document pdfDocument = new Document();
-                    pdfDocument.setName(pdfFile.getName());
+                    pdfDocument.setDocumentName(pdfFile.getName());
                     pdfDocument.setFilePath(pdfPath);
-                    pdfDocument.setCreatedDate(System.currentTimeMillis());
+                    pdfDocument.setCreatedAt(System.currentTimeMillis());
                     pdfDocument.setFileSize(pdfFile.length());
                     pdfDocument.setPageCount(1);
-                    pdfDocument.setTags("PDF");
+                    pdfDocument.setFileType("PDF");
+                    // Note: Tags are now stored separately via DocumentTag junction table
 
                     DocumentRepository repository = DocumentRepository.getInstance(this);
                     repository.insert(pdfDocument, success -> {
