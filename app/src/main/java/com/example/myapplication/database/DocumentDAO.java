@@ -6,303 +6,230 @@ import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+import androidx.room.Transaction;
 import androidx.room.Update;
 
 import java.util.List;
 
 /**
- * DocumentDAO - Data Access Object for Document entity
- * Provides CRUD operations and advanced queries
+ * DocumentDao - Data Access Object for Document entity
+ *
+ * Features:
+ * - CRUD operations
+ * - Complex queries with joins
+ * - LiveData support for reactive UI
+ * - Transaction support
  */
 @Dao
-public interface DocumentDAO {
+public interface DocumentDao {
 
-    // ================== CREATE ==================
+    // ================================
+    // INSERT
+    // ================================
 
-    /**
-     * Insert a new document
-     * @param document Document to insert
-     * @return Row ID of inserted document
-     */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     long insert(Document document);
 
-    /**
-     * Insert multiple documents
-     * @param documents List of documents to insert
-     * @return Array of row IDs
-     */
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    long[] insertAll(Document... documents);
-
-    /**
-     * Insert multiple documents from list
-     * @param documents List of documents
-     * @return List of row IDs
-     */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     List<Long> insertAll(List<Document> documents);
 
-    // ================== READ ==================
+    // ================================
+    // UPDATE
+    // ================================
 
-    /**
-     * Get all documents
-     * @return LiveData list of all documents
-     */
-    @Query("SELECT * FROM documents ORDER BY created_date DESC")
-    LiveData<List<Document>> getAllDocuments();
-
-    /**
-     * Get all documents (non-LiveData)
-     * @return List of all documents
-     */
-    @Query("SELECT * FROM documents ORDER BY created_date DESC")
-    List<Document> getAllDocumentsSync();
-
-    /**
-     * Get document by ID
-     * @param id Document ID
-     * @return Document with specified ID
-     */
-    @Query("SELECT * FROM documents WHERE id = :id")
-    Document getDocumentById(int id);
-
-    /**
-     * Get document by ID (LiveData)
-     * @param id Document ID
-     * @return LiveData document
-     */
-    @Query("SELECT * FROM documents WHERE id = :id")
-    LiveData<Document> getDocumentByIdLive(int id);
-
-    /**
-     * Get documents by name (exact match)
-     * @param name Document name
-     * @return List of matching documents
-     */
-    @Query("SELECT * FROM documents WHERE name = :name")
-    List<Document> getDocumentsByName(String name);
-
-    /**
-     * Get favorite documents
-     * @return LiveData list of favorite documents
-     */
-    @Query("SELECT * FROM documents WHERE is_favorite = 1 ORDER BY created_date DESC")
-    LiveData<List<Document>> getFavoriteDocuments();
-
-    /**
-     * Get recent documents (last 10)
-     * @return LiveData list of recent documents
-     */
-    @Query("SELECT * FROM documents ORDER BY created_date DESC LIMIT 10")
-    LiveData<List<Document>> getRecentDocuments();
-
-    /**
-     * Get documents count
-     * @return Total number of documents
-     */
-    @Query("SELECT COUNT(*) FROM documents")
-    int getDocumentCount();
-
-    /**
-     * Get documents count (LiveData)
-     * @return LiveData document count
-     */
-    @Query("SELECT COUNT(*) FROM documents")
-    LiveData<Integer> getDocumentCountLive();
-
-    // ================== UPDATE ==================
-
-    /**
-     * Update document
-     * @param document Document to update
-     * @return Number of rows updated
-     */
     @Update
     int update(Document document);
 
-    /**
-     * Update multiple documents
-     * @param documents Documents to update
-     * @return Number of rows updated
-     */
     @Update
-    int updateAll(Document... documents);
+    int updateAll(List<Document> documents);
 
-    /**
-     * Update document name
-     * @param id Document ID
-     * @param name New name
-     * @return Number of rows updated
-     */
-    @Query("UPDATE documents SET name = :name WHERE id = :id")
-    int updateDocumentName(int id, String name);
+    @Query("UPDATE documents SET modified_at = :timestamp WHERE document_id = :documentId")
+    int updateModifiedTime(long documentId, long timestamp);
 
-    /**
-     * Update document tags
-     * @param id Document ID
-     * @param tags New tags
-     * @return Number of rows updated
-     */
-    @Query("UPDATE documents SET tags = :tags WHERE id = :id")
-    int updateDocumentTags(int id, String tags);
+    @Query("UPDATE documents SET sync_status = :status, last_synced_at = :timestamp WHERE document_id = :documentId")
+    int updateSyncStatus(long documentId, String status, long timestamp);
 
-    /**
-     * Toggle favorite status
-     * @param id Document ID
-     * @param isFavorite Favorite status
-     * @return Number of rows updated
-     */
-    @Query("UPDATE documents SET is_favorite = :isFavorite WHERE id = :id")
-    int updateFavoriteStatus(int id, boolean isFavorite);
+    @Query("UPDATE documents SET folder_id = :folderId WHERE document_id = :documentId")
+    int moveToFolder(long documentId, Long folderId);
 
-    /**
-     * Update PDF path
-     * @param id Document ID
-     * @param pdfPath PDF file path
-     * @return Number of rows updated
-     */
-    @Query("UPDATE documents SET pdf_path = :pdfPath WHERE id = :id")
-    int updatePdfPath(int id, String pdfPath);
+    @Query("UPDATE documents SET is_favorite = :isFavorite WHERE document_id = :documentId")
+    int setFavorite(long documentId, boolean isFavorite);
 
-    // ================== DELETE ==================
+    @Query("UPDATE documents SET is_archived = :isArchived WHERE document_id = :documentId")
+    int setArchived(long documentId, boolean isArchived);
 
-    /**
-     * Delete document
-     * @param document Document to delete
-     * @return Number of rows deleted
-     */
+    // ================================
+    // DELETE
+    // ================================
+
     @Delete
     int delete(Document document);
 
-    /**
-     * Delete multiple documents
-     * @param documents Documents to delete
-     * @return Number of rows deleted
-     */
     @Delete
-    int deleteAll(Document... documents);
+    int deleteAll(List<Document> documents);
 
-    /**
-     * Delete document by ID
-     * @param id Document ID
-     * @return Number of rows deleted
-     */
-    @Query("DELETE FROM documents WHERE id = :id")
-    int deleteById(int id);
+    @Query("DELETE FROM documents WHERE document_id = :documentId")
+    int deleteById(long documentId);
 
-    /**
-     * Delete all documents
-     * @return Number of rows deleted
-     */
+    @Query("DELETE FROM documents WHERE folder_id = :folderId")
+    int deleteByFolder(long folderId);
+
     @Query("DELETE FROM documents")
     int deleteAllDocuments();
 
-    /**
-     * Delete old documents (older than specified days)
-     * @param daysAgo Number of days ago
-     * @return Number of rows deleted
-     */
-    @Query("DELETE FROM documents WHERE created_date < :timestamp")
-    int deleteOldDocuments(long timestamp);
+    // ================================
+    // SELECT - Basic
+    // ================================
 
-    // ================== SEARCH & FILTER ==================
+    @Query("SELECT * FROM documents WHERE document_id = :documentId")
+    Document getById(long documentId);
 
-    /**
-     * Search documents by name (partial match)
-     * @param searchQuery Search query
-     * @return LiveData list of matching documents
-     */
-    @Query("SELECT * FROM documents WHERE name LIKE '%' || :searchQuery || '%' ORDER BY created_date DESC")
-    LiveData<List<Document>> searchDocumentsByName(String searchQuery);
+    @Query("SELECT * FROM documents WHERE document_id = :documentId")
+    LiveData<Document> getByIdLive(long documentId);
 
-    /**
-     * Search documents by tags
-     * @param tag Tag to search
-     * @return LiveData list of matching documents
-     */
-    @Query("SELECT * FROM documents WHERE tags LIKE '%' || :tag || '%' ORDER BY created_date DESC")
-    LiveData<List<Document>> searchDocumentsByTag(String tag);
+    @Query("SELECT * FROM documents ORDER BY created_at DESC")
+    List<Document> getAll();
 
-    /**
-     * Search documents by name or tags
-     * @param searchQuery Search query
-     * @return LiveData list of matching documents
-     */
-    @Query("SELECT * FROM documents WHERE name LIKE '%' || :searchQuery || '%' OR tags LIKE '%' || :searchQuery || '%' ORDER BY created_date DESC")
-    LiveData<List<Document>> searchDocuments(String searchQuery);
+    @Query("SELECT * FROM documents ORDER BY created_at DESC")
+    LiveData<List<Document>> getAllLive();
 
-    /**
-     * Get documents by date range
-     * @param startDate Start timestamp
-     * @param endDate End timestamp
-     * @return LiveData list of documents in date range
-     */
-    @Query("SELECT * FROM documents WHERE created_date BETWEEN :startDate AND :endDate ORDER BY created_date DESC")
-    LiveData<List<Document>> getDocumentsByDateRange(long startDate, long endDate);
+    @Query("SELECT * FROM documents ORDER BY created_at DESC LIMIT :limit")
+    List<Document> getRecent(int limit);
 
-    /**
-     * Get documents created today
-     * @param todayStart Start of today timestamp
-     * @return LiveData list of today's documents
-     */
-    @Query("SELECT * FROM documents WHERE created_date >= :todayStart ORDER BY created_date DESC")
-    LiveData<List<Document>> getTodayDocuments(long todayStart);
+    @Query("SELECT * FROM documents ORDER BY created_at DESC LIMIT :limit")
+    LiveData<List<Document>> getRecentLive(int limit);
 
-    /**
-     * Filter documents by page count
-     * @param minPages Minimum pages
-     * @param maxPages Maximum pages
-     * @return LiveData list of filtered documents
-     */
-    @Query("SELECT * FROM documents WHERE page_count BETWEEN :minPages AND :maxPages ORDER BY created_date DESC")
-    LiveData<List<Document>> getDocumentsByPageCount(int minPages, int maxPages);
+    // ================================
+    // SELECT - By Folder
+    // ================================
 
-    /**
-     * Filter documents by file size
-     * @param minSize Minimum file size (bytes)
-     * @param maxSize Maximum file size (bytes)
-     * @return LiveData list of filtered documents
-     */
-    @Query("SELECT * FROM documents WHERE file_size BETWEEN :minSize AND :maxSize ORDER BY created_date DESC")
-    LiveData<List<Document>> getDocumentsByFileSize(long minSize, long maxSize);
+    @Query("SELECT * FROM documents WHERE folder_id = :folderId ORDER BY created_at DESC")
+    List<Document> getByFolder(long folderId);
 
-    // ================== STATISTICS ==================
+    @Query("SELECT * FROM documents WHERE folder_id = :folderId ORDER BY created_at DESC")
+    LiveData<List<Document>> getByFolderLive(long folderId);
 
-    /**
-     * Get total file size of all documents
-     * @return Total size in bytes
-     */
+    @Query("SELECT * FROM documents WHERE folder_id IS NULL ORDER BY created_at DESC")
+    List<Document> getRootDocuments();
+
+    @Query("SELECT * FROM documents WHERE folder_id IS NULL ORDER BY created_at DESC")
+    LiveData<List<Document>> getRootDocumentsLive();
+
+    // ================================
+    // SELECT - Favorites & Archived
+    // ================================
+
+    @Query("SELECT * FROM documents WHERE is_favorite = 1 ORDER BY created_at DESC")
+    List<Document> getFavorites();
+
+    @Query("SELECT * FROM documents WHERE is_favorite = 1 ORDER BY created_at DESC")
+    LiveData<List<Document>> getFavoritesLive();
+
+    @Query("SELECT * FROM documents WHERE is_archived = 1 ORDER BY created_at DESC")
+    List<Document> getArchived();
+
+    @Query("SELECT * FROM documents WHERE is_archived = 1 ORDER BY created_at DESC")
+    LiveData<List<Document>> getArchivedLive();
+
+    // ================================
+    // SELECT - By Sync Status
+    // ================================
+
+    @Query("SELECT * FROM documents WHERE sync_status = :status ORDER BY created_at DESC")
+    List<Document> getBySyncStatus(String status);
+
+    @Query("SELECT * FROM documents WHERE sync_status = 'NOT_SYNCED' OR sync_status = 'FAILED' ORDER BY created_at DESC")
+    List<Document> getUnsynced();
+
+    @Query("SELECT * FROM documents WHERE sync_status = 'NOT_SYNCED' OR sync_status = 'FAILED' ORDER BY created_at DESC")
+    LiveData<List<Document>> getUnsyncedLive();
+
+    // ================================
+    // SELECT - Search
+    // ================================
+
+    @Query("SELECT * FROM documents WHERE document_name LIKE '%' || :query || '%' OR ocr_text LIKE '%' || :query || '%' ORDER BY created_at DESC")
+    List<Document> search(String query);
+
+    @Query("SELECT * FROM documents WHERE document_name LIKE '%' || :query || '%' OR ocr_text LIKE '%' || :query || '%' ORDER BY created_at DESC")
+    LiveData<List<Document>> searchLive(String query);
+
+    @Query("SELECT * FROM documents WHERE ocr_text LIKE '%' || :query || '%' ORDER BY ocr_confidence DESC")
+    List<Document> searchByOCR(String query);
+
+    // ================================
+    // SELECT - By Date Range
+    // ================================
+
+    @Query("SELECT * FROM documents WHERE created_at BETWEEN :startTime AND :endTime ORDER BY created_at DESC")
+    List<Document> getByDateRange(long startTime, long endTime);
+
+    @Query("SELECT * FROM documents WHERE created_at >= :startTime ORDER BY created_at DESC")
+    List<Document> getCreatedAfter(long startTime);
+
+    // ================================
+    // SELECT - Statistics
+    // ================================
+
+    @Query("SELECT COUNT(*) FROM documents")
+    int getCount();
+
+    @Query("SELECT COUNT(*) FROM documents")
+    LiveData<Integer> getCountLive();
+
+    @Query("SELECT COUNT(*) FROM documents WHERE folder_id = :folderId")
+    int getCountByFolder(long folderId);
+
     @Query("SELECT SUM(file_size) FROM documents")
-    long getTotalFileSize();
+    long getTotalSize();
+
+    @Query("SELECT SUM(file_size) FROM documents WHERE folder_id = :folderId")
+    long getTotalSizeByFolder(long folderId);
+
+    @Query("SELECT COUNT(*) FROM documents WHERE is_favorite = 1")
+    int getFavoriteCount();
+
+    @Query("SELECT COUNT(*) FROM documents WHERE sync_status = 'SYNCED'")
+    int getSyncedCount();
+
+    // ================================
+    // SELECT - By File Type
+    // ================================
+
+    @Query("SELECT * FROM documents WHERE file_type = :fileType ORDER BY created_at DESC")
+    List<Document> getByFileType(String fileType);
+
+    @Query("SELECT COUNT(*) FROM documents WHERE file_type = :fileType")
+    int getCountByFileType(String fileType);
+
+    // ================================
+    // Complex Queries with Joins
+    // ================================
 
     /**
-     * Get average file size
-     * @return Average size in bytes
+     * Get documents with their tags
      */
-    @Query("SELECT AVG(file_size) FROM documents")
-    long getAverageFileSize();
+    @Transaction
+    @Query("SELECT * FROM documents WHERE document_id = :documentId")
+    DocumentWithTags getDocumentWithTags(long documentId);
+
+    @Transaction
+    @Query("SELECT * FROM documents ORDER BY created_at DESC")
+    LiveData<List<DocumentWithTags>> getAllDocumentsWithTags();
 
     /**
-     * Get total page count
-     * @return Total pages across all documents
+     * Get documents by tag
      */
-    @Query("SELECT SUM(page_count) FROM documents")
-    int getTotalPageCount();
+    @Query("SELECT d.* FROM documents d " +
+           "INNER JOIN document_tags dt ON d.document_id = dt.document_id " +
+           "WHERE dt.tag_id = :tagId " +
+           "ORDER BY d.created_at DESC")
+    List<Document> getByTag(long tagId);
 
-    /**
-     * Get documents created this week
-     * @param weekStart Start of week timestamp
-     * @return Document count
-     */
-    @Query("SELECT COUNT(*) FROM documents WHERE created_date >= :weekStart")
-    int getWeeklyDocumentCount(long weekStart);
-
-    /**
-     * Get all unique tags
-     * @return List of all tags (needs to be parsed)
-     */
-    @Query("SELECT DISTINCT tags FROM documents WHERE tags IS NOT NULL AND tags != ''")
-    List<String> getAllTags();
+    @Query("SELECT d.* FROM documents d " +
+           "INNER JOIN document_tags dt ON d.document_id = dt.document_id " +
+           "WHERE dt.tag_id = :tagId " +
+           "ORDER BY d.created_at DESC")
+    LiveData<List<Document>> getByTagLive(long tagId);
 }
 
