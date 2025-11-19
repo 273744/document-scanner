@@ -30,13 +30,10 @@ android {
         }
 
         release {
-            // Enable code shrinking with ProGuard/R8 (removes unused code)
-            // Savings: ~15-20% reduction in APK size
-            isMinifyEnabled = true
-
-            // Enable resource shrinking (removes unused resources)
-            // Savings: ~10-15% reduction in APK size
-            isShrinkResources = true
+            // TEMPORARY: Disabled minification to fix build
+            // TODO: Re-enable after fixing ProGuard rules
+            isMinifyEnabled = false
+            isShrinkResources = false
 
             // Use aggressive ProGuard optimization
             proguardFiles(
@@ -128,37 +125,44 @@ dependencies {
     // REMOVED: arsceneview (saves 5 MB)
 
     // ================================
-    // IMAGE PROCESSING - OPTIMIZED
+    // IMAGE PROCESSING
     // ================================
-    // REMOVED: OpenCV (saves 20 MB)
-    // Using ML Kit Document Scanner instead (lighter)
+    // OpenCV - REQUIRED by AR classes
+    implementation("org.opencv:opencv:4.9.0")
+
+    // ML Kit Document Scanner
     implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1")
     implementation("com.google.mlkit:image-labeling:17.0.8")
 
     // ================================
-    // OCR - Latin Only (~4 MB)
+    // OCR - All Languages
     // ================================
     implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.0")
-    // REMOVED: Additional languages (saves 12 MB)
-    // REMOVED: Language ID (saves 3 MB)
-    // REMOVED: Translation (saves 5 MB)
-    // REMOVED: Barcode (saves 2 MB)
+
+    // Additional languages - REQUIRED by OCRTextRecognizer
+    implementation("com.google.mlkit:text-recognition-devanagari:16.0.0")
+    implementation("com.google.mlkit:text-recognition-chinese:16.0.0")
+    implementation("com.google.mlkit:text-recognition-japanese:16.0.0")
+    implementation("com.google.mlkit:text-recognition-korean:16.0.0")
+
+    // Language ID - REQUIRED by OCRTextRecognizer
+    implementation("com.google.mlkit:language-id:17.0.5")
+
     implementation("com.google.mlkit:common:18.10.0")
 
     // ================================
-    // ML - REMOVED HEAVY LIBS
+    // PLAY SERVICES
     // ================================
-    // REMOVED: TensorFlow Lite (saves 10 MB)
-    // REMOVED: play-services-vision (saves 5 MB)
-
-    // Keep only base Play Services
     implementation("com.google.android.gms:play-services-base:18.3.0")
 
     // ================================
-    // PDF - Use PDFBox (~3 MB)
+    // PDF - iText REQUIRED
     // ================================
-    // REMOVED: iText (saves 8 MB)
-    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+    // iText - REQUIRED by PdfGenerator
+    implementation("com.itextpdf:itext7-core:7.2.5")
+    implementation("com.itextpdf:layout:7.2.5")
+    implementation("com.itextpdf:kernel:7.2.5")
+    implementation("com.itextpdf:io:7.2.5")
 
     // ================================
     // DATABASE (~2 MB)
@@ -168,14 +172,18 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
 
     // ================================
-    // CLOUD - Simplified (~6 MB)
+    // CLOUD STORAGE
     // ================================
     implementation("com.google.android.gms:play-services-auth:21.0.0")
-    // REMOVED: Full Drive SDK (saves 15 MB)
-    // REMOVED: play-services-identity (saves 2 MB)
+
+    // Google Drive SDK - REQUIRED by CloudStorageManager
+    implementation("com.google.apis:google-api-services-drive:v3-rev20220815-2.0.0")
+    implementation("com.google.api-client:google-api-client-android:2.0.0")
+    implementation("com.google.http-client:google-http-client-android:1.42.3")
+    implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
+    implementation("com.google.api-client:google-api-client-gson:2.0.0")
 
     implementation("com.dropbox.core:dropbox-core-sdk:6.1.0")
-    // REMOVED: Dropbox Android SDK (saves 3 MB)
 
     // ================================
     // BACKGROUND TASKS (~2 MB)
@@ -205,17 +213,16 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
     // ================================
-    // COMPOSE - REMOVED (saves 8 MB)
-    // Uncomment only if actually using Compose
+    // COMPOSE (~8 MB) - TEMPORARY
+    // Re-enabled to fix build errors
+    // TODO: Delete theme files and remove these
     // ================================
-    // implementation(libs.androidx.activity.compose)
-    // implementation(platform(libs.androidx.compose.bom))
-    // implementation(libs.androidx.compose.ui)
-    // implementation(libs.androidx.compose.ui.graphics)
-    // implementation(libs.androidx.compose.ui.tooling.preview)
-    // implementation(libs.androidx.compose.material3)
-    // implementation("androidx.compose.material:material-icons-extended:1.7.5")
-    // implementation("com.google.accompanist:accompanist-permissions:0.37.0")
+    implementation(libs.androidx.activity.compose)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.material3)
 
     // ================================
     // TESTING
