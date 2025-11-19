@@ -8,7 +8,7 @@
     tools:context=".ImageCropActivity">
 
     <!-- Crop Overlay View - Custom view for image and corner dragging -->
-    <com.example.myapplication.CropOverlayView
+    <com.srikanth.docscanner.CropOverlayView
         android:id="@+id/cropOverlayView"
         android:layout_width="0dp"
         android:layout_height="0dp"

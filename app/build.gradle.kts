@@ -5,13 +5,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.myapplication"
+    namespace = "com.srikanth.docscanner"
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId = "com.example.myapplication"
+        applicationId = "com.srikanth.docscanner"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
