@@ -10,14 +10,37 @@ android {
         version = release(36)
     }
 
+    // ================================
+    // 16 KB PAGE SIZE SUPPORT
+    // Latest NDK with 16KB page size support
+    // ================================
+    ndkVersion = "27.0.12077973"
+
     defaultConfig {
         applicationId = "com.srikanth.docscanner"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2  // Increment version for resubmission
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // ================================
+        // NDK ABI FILTERS - 16KB Support
+        // ================================
+        ndk {
+            // Only include ARM architectures (primary 16KB requirement)
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
+
+        // Ensure native libs are extracted for 16KB compatibility
+        externalNativeBuild {
+            cmake {
+                arguments += listOf(
+                    "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+                )
+            }
+        }
     }
 
     buildTypes {
@@ -94,6 +117,18 @@ android {
                 "META-INF/*.kotlin_module"
             )
         }
+
+        // ================================
+        // JNI LIBS PACKAGING - 16KB Support
+        // ================================
+        jniLibs {
+            // Use modern packaging for 16KB page size compatibility
+            useLegacyPackaging = false
+
+            // Keep all native libraries uncompressed
+            // This is required for 16KB page size support
+            keepDebugSymbols += listOf("**/*.so")
+        }
     }
 }
 
@@ -125,10 +160,11 @@ dependencies {
     // REMOVED: arsceneview (saves 5 MB)
 
     // ================================
-    // IMAGE PROCESSING
+    // IMAGE PROCESSING - 16KB Compatible
     // ================================
-    // OpenCV - REQUIRED by AR classes
-    implementation("org.opencv:opencv:4.9.0")
+    // OpenCV 4.10.0+ - REQUIRED by AR classes
+    // Updated for 16KB page size support
+    implementation("org.opencv:opencv:4.10.0")
 
     // ML Kit Document Scanner
     implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1")
