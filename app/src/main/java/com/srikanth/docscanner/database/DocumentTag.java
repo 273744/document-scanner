@@ -58,6 +58,7 @@ public class DocumentTag {
         this.taggedAt = System.currentTimeMillis();
     }
 
+    @androidx.room.Ignore
     public DocumentTag(long documentId, long tagId) {
         this();
         this.documentId = documentId;

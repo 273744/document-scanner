@@ -87,6 +87,7 @@ public class Folder {
         this.documentCount = 0;
     }
 
+    @androidx.room.Ignore
     public Folder(String folderName) {
         this();
         this.folderName = folderName;

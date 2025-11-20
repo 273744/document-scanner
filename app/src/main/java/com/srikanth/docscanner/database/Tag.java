@@ -59,11 +59,13 @@ public class Tag {
         this.isSystemTag = false;
     }
 
+    @androidx.room.Ignore
     public Tag(String tagName) {
         this();
         this.tagName = tagName;
     }
 
+    @androidx.room.Ignore
     public Tag(String tagName, String tagColor) {
         this(tagName);
         this.tagColor = tagColor;

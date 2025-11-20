@@ -6,39 +6,43 @@ plugins {
 
 android {
     namespace = "com.srikanth.docscanner"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 35  // Use stable SDK
 
     // ================================
     // 16 KB PAGE SIZE SUPPORT
-    // Latest NDK with 16KB page size support
+    // NDK r27+ supports 16KB page alignment
     // ================================
     ndkVersion = "27.0.12077973"
 
     defaultConfig {
         applicationId = "com.srikanth.docscanner"
         minSdk = 24
-        targetSdk = 36
-        versionCode = 2  // Increment version for resubmission
-        versionName = "1.1"
+        targetSdk = 35
+        versionCode = 4  // Increment version for 16KB AAB fix
+        versionName = "1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // ================================
         // NDK ABI FILTERS - 16KB Support
+        // Focus on arm64-v8a which is primary for 16KB requirement
         // ================================
         ndk {
-            // Only include ARM architectures (primary 16KB requirement)
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+            // Only arm64-v8a for 16KB page size compatibility
+            abiFilters += listOf("arm64-v8a")
         }
 
-        // Ensure native libs are extracted for 16KB compatibility
+        // ================================
+        // 16 KB PAGE SIZE FLAGS
+        // Enable flexible page size support
+        // ================================
         externalNativeBuild {
             cmake {
                 arguments += listOf(
                     "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
                 )
+                cFlags += listOf("-Wl,-z,max-page-size=16384")
+                cppFlags += listOf("-Wl,-z,max-page-size=16384")
             }
         }
     }
@@ -103,6 +107,25 @@ android {
     }
     */
 
+    // ================================
+    // APP BUNDLE CONFIGURATION - 16KB Support
+    // Build AAB for automatic 16KB page size handling by Google Play
+    // ================================
+    bundle {
+        language {
+            // Enable split by language to reduce download size
+            enableSplit = true
+        }
+        density {
+            // Enable split by screen density
+            enableSplit = true
+        }
+        abi {
+            // Enable split by ABI
+            enableSplit = true
+        }
+    }
+
     packaging {
         resources {
             excludes += setOf(
@@ -155,8 +178,9 @@ dependencies {
 
     // ================================
     // AR FEATURES (~10 MB) - Optional
+    // ARCore 1.45.0+ has 16KB page size support
     // ================================
-    implementation("com.google.ar:core:1.42.0")
+    implementation("com.google.ar:core:1.45.0")
     // REMOVED: arsceneview (saves 5 MB)
 
     // ================================
