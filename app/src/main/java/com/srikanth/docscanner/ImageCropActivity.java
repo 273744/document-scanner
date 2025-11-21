@@ -42,6 +42,7 @@ public class ImageCropActivity extends AppCompatActivity {
     private MaterialButton btnCrop;
     private MaterialButton btnReset;
     private MaterialButton btnCancel;
+    private MaterialButton btnAutoDetect;
     private ProgressBar progressBar;
     private TextView tvStatus;
 
@@ -88,6 +89,7 @@ public class ImageCropActivity extends AppCompatActivity {
         btnCrop = findViewById(R.id.btnCrop);
         btnReset = findViewById(R.id.btnReset);
         btnCancel = findViewById(R.id.btnCancel);
+        btnAutoDetect = findViewById(R.id.btnAutoDetect);
         progressBar = findViewById(R.id.progressBar);
         tvStatus = findViewById(R.id.tvStatus);
 
@@ -108,6 +110,9 @@ public class ImageCropActivity extends AppCompatActivity {
 
         // Cancel button - exit without saving
         btnCancel.setOnClickListener(v -> confirmCancel());
+
+        // Auto-detect button - automatically detect edges and enhance
+        btnAutoDetect.setOnClickListener(v -> autoDetectAndEnhance());
     }
 
     /**
@@ -167,6 +172,152 @@ public class ImageCropActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Stay", null)
                 .show();
+    }
+
+    /**
+     * Auto-detect edges and enhance
+     */
+    private void autoDetectAndEnhance() {
+        if (originalBitmap == null) {
+            Toast.makeText(this, "No image loaded", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Disable buttons during processing
+        setButtonsEnabled(false);
+        showProgress(true, "🤖 Auto-detecting document edges...");
+
+        // Process in background thread
+        new Thread(() -> {
+            try {
+                // Step 1: Detect edges
+                AutoDocumentProcessor.EdgeDetectionResult edgeResult =
+                    AutoDocumentProcessor.detectEdges(originalBitmap);
+
+                if (edgeResult.success) {
+                    // Update UI with detected corners
+                    runOnUiThread(() -> {
+                        cropOverlayView.setCorners(edgeResult.corners);
+                        showProgress(true, "✓ Edges detected! Enhancing image...");
+                    });
+
+                    // Step 2: Apply perspective correction
+                    Bitmap croppedBitmap = AutoDocumentProcessor.applyCropWithPerspective(
+                        originalBitmap, edgeResult.corners);
+
+                    // Step 3: Apply auto-enhancement
+                    Bitmap enhancedBitmap = AutoDocumentProcessor.enhanceBitmap(
+                        croppedBitmap, AutoDocumentProcessor.EnhancementType.AUTO_ENHANCE);
+
+                    // Step 4: Save the processed image
+                    saveAutoProcessedImage(enhancedBitmap, edgeResult.qualityScore);
+
+                } else {
+                    // No edges detected, show error
+                    runOnUiThread(() -> {
+                        showProgress(false, null);
+                        setButtonsEnabled(true);
+
+                        new MaterialAlertDialogBuilder(this)
+                            .setTitle("⚠️ No Document Detected")
+                            .setMessage(edgeResult.message + "\n\nYou can:\n• Manually adjust corners\n• Try with better lighting\n• Ensure document is flat and visible")
+                            .setPositiveButton("OK", null)
+                            .show();
+                    });
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error in auto-detect", e);
+                runOnUiThread(() -> {
+                    showProgress(false, null);
+                    setButtonsEnabled(true);
+                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
+        }).start();
+    }
+
+    /**
+     * Save auto-processed image
+     */
+    private void saveAutoProcessedImage(Bitmap processedBitmap, float qualityScore) {
+        try {
+            // Generate output filename
+            String timestamp = new SimpleDateFormat(FILENAME_FORMAT, Locale.US)
+                    .format(new Date());
+            File outputFile = new File(outputDirectory, "AUTO_" + timestamp + ".jpg");
+
+            // Save bitmap
+            FileOutputStream out = new FileOutputStream(outputFile);
+            processedBitmap.compress(Bitmap.CompressFormat.JPEG, 95, out);
+            out.flush();
+            out.close();
+
+            Log.d(TAG, "Auto-processed image saved: " + outputFile.getAbsolutePath());
+
+            // Save to database
+            Document document = new Document();
+            document.setDocumentName(outputFile.getName());
+            document.setFilePath(outputFile.getAbsolutePath());
+            document.setCreatedAt(System.currentTimeMillis());
+            document.setFileSize(outputFile.length());
+            document.setPageCount(1);
+            document.setFileType("IMAGE");
+            document.setDescription("Auto-detected and enhanced (Quality: " + String.format("%.1f", qualityScore) + "/10)");
+
+            repository.insert(document, success -> {
+                Log.d(TAG, "Auto-processed document saved to database: " + success);
+            });
+
+            // Return result
+            runOnUiThread(() -> {
+                showProgress(false, null);
+                setButtonsEnabled(true);
+
+                String processedPath = outputFile.getAbsolutePath();
+
+                // Check if we're in multi-page mode
+                boolean multiPageMode = getIntent().getBooleanExtra("multi_page_mode", false);
+
+                if (multiPageMode) {
+                    // Multi-page mode: Just return result and close
+                    Toast.makeText(this, "✓ Page auto-processed and added!", Toast.LENGTH_SHORT).show();
+                    Intent resultIntent = new Intent();
+                    resultIntent.putExtra(EXTRA_CROPPED_PATH, processedPath);
+                    resultIntent.putExtra("saved_image_path", processedPath);
+                    setResult(RESULT_OK, resultIntent);
+                    finish();
+                } else {
+                    // Normal mode: Show success dialog
+                    new MaterialAlertDialogBuilder(this)
+                        .setTitle("✨ Document Enhanced!")
+                        .setMessage("Quality Score: " + String.format("%.1f", qualityScore) + "/10\n\nDocument automatically detected, cropped, and enhanced!\n\nWould you like to generate a PDF?")
+                        .setPositiveButton("Generate PDF", (dialog, which) -> {
+                            generateSinglePagePdf(processedPath);
+                        })
+                        .setNeutralButton("Add More Pages", (dialog, which) -> {
+                            Intent intent = new Intent(this, MultiPageActivity.class);
+                            intent.putExtra("initial_image", processedPath);
+                            intent.putExtra("continue_scanning", true);
+                            startActivity(intent);
+                            finish();
+                        })
+                        .setNegativeButton("Done", (dialog, which) -> {
+                            finish();
+                        })
+                        .setCancelable(false)
+                        .show();
+                }
+            });
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error saving auto-processed image", e);
+            runOnUiThread(() -> {
+                showProgress(false, null);
+                setButtonsEnabled(true);
+                Toast.makeText(this, "Error saving: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            });
+        }
     }
 
     /**
@@ -358,6 +509,7 @@ public class ImageCropActivity extends AppCompatActivity {
         btnCrop.setEnabled(enabled);
         btnReset.setEnabled(enabled);
         btnCancel.setEnabled(enabled);
+        btnAutoDetect.setEnabled(enabled);
     }
 
     /**

@@ -168,6 +168,29 @@ public class CropOverlayView extends View {
     }
 
     /**
+     * Set corners from bitmap coordinates (used for auto-detect)
+     */
+    public void setCorners(PointF[] bitmapCorners) {
+        if (bitmapCorners == null || bitmapCorners.length != 4 || imageBitmap == null) {
+            return;
+        }
+
+        // Convert bitmap coordinates to screen coordinates
+        for (int i = 0; i < 4; i++) {
+            float screenX = (bitmapCorners[i].x * imageScale) + imageOffsetX;
+            float screenY = (bitmapCorners[i].y * imageScale) + imageOffsetY;
+
+            // Clamp to image bounds
+            screenX = Math.max(imageRect.left, Math.min(imageRect.right, screenX));
+            screenY = Math.max(imageRect.top, Math.min(imageRect.bottom, screenY));
+
+            corners[i].set(screenX, screenY);
+        }
+
+        invalidate();
+    }
+
+    /**
      * Get corner points in bitmap coordinates
      */
     public PointF[] getCornerPoints() {
