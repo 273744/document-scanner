@@ -7,6 +7,47 @@
     android:background="@android:color/black"
     tools:context=".ImageCropActivity">
 
+    <!-- Quality Score Badge (Top Center) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardQualityScore"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:visibility="gone"
+        app:cardBackgroundColor="#CC4CAF50"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="8dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="✨"
+                android:textSize="20sp"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/tvQualityScore"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Quality: 8.5/10"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
     <!-- Crop Overlay View - Custom view for image and corner dragging -->
     <com.srikanth.docscanner.CropOverlayView
         android:id="@+id/cropOverlayView"

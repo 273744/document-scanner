@@ -410,11 +410,89 @@ public class CameraActivity extends AppCompatActivity {
      * Show enhancement options dialog after capture
      */
     private void showEnhancementDialog(File capturedFile) {
+        // Automatically detect edges and show preview with detected corners
+        autoDetectAndShowPreview(capturedFile);
+    }
+
+    /**
+     * Auto-detect edges and show preview with detected corners
+     */
+    private void autoDetectAndShowPreview(File capturedFile) {
         // Check if we're in multi-page mode
+        boolean multiPageMode = getIntent().getBooleanExtra("multi_page_mode", false);
+
+        // Show progress dialog
+        android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(this);
+        progressDialog.setMessage("🤖 Auto-detecting edges...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        // Process in background thread
+        new Thread(() -> {
+            try {
+                // Load bitmap
+                Bitmap bitmap = BitmapFactory.decodeFile(capturedFile.getAbsolutePath());
+
+                if (bitmap == null) {
+                    runOnUiThread(() -> {
+                        progressDialog.dismiss();
+                        showManualOptions(capturedFile);
+                    });
+                    return;
+                }
+
+                // Detect edges
+                AutoDocumentProcessor.EdgeDetectionResult result =
+                    AutoDocumentProcessor.detectEdges(bitmap);
+
+                // Dismiss progress dialog
+                runOnUiThread(() -> {
+                    progressDialog.dismiss();
+
+                    // Navigate to ImageCropActivity with auto-detected corners
+                    Intent intent = new Intent(this, ImageCropActivity.class);
+                    intent.putExtra("image_path", capturedFile.getAbsolutePath());
+                    intent.putExtra("auto_detect_completed", true);
+                    intent.putExtra("quality_score", result.qualityScore);
+                    intent.putExtra("detection_success", result.success);
+
+                    // Pass detected corners if successful
+                    if (result.success && result.corners != null) {
+                        float[] cornerArray = new float[8]; // 4 corners x 2 coordinates
+                        for (int i = 0; i < 4; i++) {
+                            cornerArray[i * 2] = result.corners[i].x;
+                            cornerArray[i * 2 + 1] = result.corners[i].y;
+                        }
+                        intent.putExtra("detected_corners", cornerArray);
+                    }
+
+                    if (multiPageMode) {
+                        intent.putExtra("multi_page_mode", true);
+                        int currentPageCount = getIntent().getIntExtra("current_page_count", 0);
+                        intent.putExtra("page_number", currentPageCount + 1);
+                    }
+
+                    startActivityForResult(intent, REQUEST_PREVIEW);
+                });
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error in auto-detection", e);
+                runOnUiThread(() -> {
+                    progressDialog.dismiss();
+                    Toast.makeText(this, "Detection failed, showing manual options", Toast.LENGTH_SHORT).show();
+                    showManualOptions(capturedFile);
+                });
+            }
+        }).start();
+    }
+
+    /**
+     * Show manual options if auto-detection is not used
+     */
+    private void showManualOptions(File capturedFile) {
         boolean multiPageMode = getIntent().getBooleanExtra("multi_page_mode", false);
         int currentPageCount = getIntent().getIntExtra("current_page_count", 0);
 
-        // Always show dialog - user should choose what to do with captured image
         String title = multiPageMode ?
             "Add Page " + (currentPageCount + 1) :
             "Document Captured";
@@ -426,7 +504,6 @@ public class CameraActivity extends AppCompatActivity {
                 .setTitle(title)
                 .setMessage(message)
                 .setPositiveButton("Enhance & Save", (dialog, which) -> {
-                    // Launch PreviewActivity for enhancement
                     Intent intent = new Intent(this, PreviewActivity.class);
                     intent.putExtra("image_path", capturedFile.getAbsolutePath());
                     if (multiPageMode) {
@@ -436,7 +513,6 @@ public class CameraActivity extends AppCompatActivity {
                     startActivityForResult(intent, REQUEST_PREVIEW);
                 })
                 .setNeutralButton("Crop First", (dialog, which) -> {
-                    // Launch ImageCropActivity for manual cropping
                     Intent intent = new Intent(this, ImageCropActivity.class);
                     intent.putExtra("image_path", capturedFile.getAbsolutePath());
                     if (multiPageMode) {
@@ -446,7 +522,6 @@ public class CameraActivity extends AppCompatActivity {
                     startActivityForResult(intent, REQUEST_PREVIEW);
                 })
                 .setNegativeButton("Keep As-Is", (dialog, which) -> {
-                    // Keep the captured image as-is - save to database and return
                     saveImageAsIs(capturedFile, multiPageMode);
                 })
                 .setCancelable(true)

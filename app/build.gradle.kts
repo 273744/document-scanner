@@ -24,6 +24,19 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // ================================
+        // ROOM DATABASE CONFIGURATION
+        // Disable schema export to avoid warning
+        // ================================
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments += mapOf(
+                    "room.schemaLocation" to "$projectDir/schemas",
+                    "room.incremental" to "true"
+                )
+            }
+        }
+
+        // ================================
         // NDK ABI FILTERS - 16KB Support
         // Focus on arm64-v8a which is primary for 16KB requirement
         // ================================

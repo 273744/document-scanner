@@ -312,19 +312,39 @@ public class DocumentViewerActivity extends AppCompatActivity {
     }
 
     /**
-     * Edit document
+     * Edit document - show options for crop or enhance
      */
     private void editDocument() {
-        if (currentDocument == null) {
+        if (currentDocument == null || imagePaths.isEmpty()) {
             Toast.makeText(this, "Cannot edit this document", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Navigate to PreviewActivity for editing
-        Intent intent = new Intent(this, PreviewActivity.class);
-        intent.putExtra("image_path", imagePaths.get(currentPage));
-        intent.putExtra("document_id", currentDocument.getDocumentId());
-        startActivityForResult(intent, REQUEST_EDIT);
+        String currentImagePath = imagePaths.get(currentPage);
+
+        // Show edit options dialog
+        new MaterialAlertDialogBuilder(this)
+            .setTitle("Edit Document")
+            .setMessage("How would you like to edit this document?")
+            .setPositiveButton("Crop & Adjust", (dialog, which) -> {
+                // Open ImageCropActivity for cropping
+                Intent intent = new Intent(this, ImageCropActivity.class);
+                intent.putExtra("image_path", currentImagePath);
+                intent.putExtra("document_id", currentDocument.getDocumentId());
+                intent.putExtra("edit_mode", true);
+                startActivityForResult(intent, REQUEST_EDIT);
+            })
+            .setNeutralButton("Enhance & Filter", (dialog, which) -> {
+                // Open PreviewActivity for enhancement
+                Intent intent = new Intent(this, PreviewActivity.class);
+                intent.putExtra("image_path", currentImagePath);
+                intent.putExtra("document_id", currentDocument.getDocumentId());
+                intent.putExtra("edit_mode", true);
+                startActivityForResult(intent, REQUEST_EDIT);
+            })
+            .setNegativeButton("Cancel", null)
+            .setIcon(android.R.drawable.ic_menu_edit)
+            .show();
     }
 
     /**

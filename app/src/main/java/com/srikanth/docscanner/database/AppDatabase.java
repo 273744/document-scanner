@@ -26,7 +26,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
         DocumentTag.class
     },
     version = 1,
-    exportSchema = true
+    exportSchema = false  // Disable schema export to avoid warning
 )
 public abstract class AppDatabase extends RoomDatabase {
 

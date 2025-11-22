@@ -410,48 +410,84 @@ public class PreviewActivity extends AppCompatActivity implements FilterAdapter.
 
         new Thread(() -> {
             try {
-                // Generate filename
-                String timestamp = new SimpleDateFormat(FILENAME_FORMAT, Locale.US)
-                        .format(new Date());
-                String prefix = currentFilter == FilterType.ORIGINAL ? "DOC_" : "ENHANCED_";
-                File outputFile = new File(outputDirectory, prefix + timestamp + ".jpg");
+                // Check if we're in edit mode
+                boolean editMode = getIntent().getBooleanExtra("edit_mode", false);
+                int documentId = getIntent().getIntExtra("document_id", -1);
+
+                File outputFile;
+
+                if (editMode && documentId != -1) {
+                    // Edit mode: Update the existing file
+                    outputFile = new File(imagePath);
+                    Log.d(TAG, "Edit mode: Updating existing file: " + outputFile.getAbsolutePath());
+                } else {
+                    // New save: Create new file
+                    String timestamp = new SimpleDateFormat(FILENAME_FORMAT, Locale.US)
+                            .format(new Date());
+                    String prefix = currentFilter == FilterType.ORIGINAL ? "DOC_" : "ENHANCED_";
+                    outputFile = new File(outputDirectory, prefix + timestamp + ".jpg");
+                    Log.d(TAG, "New save: Creating file: " + outputFile.getAbsolutePath());
+                }
 
                 // Save bitmap
                 FileOutputStream out = new FileOutputStream(outputFile);
-                currentBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+                currentBitmap.compress(Bitmap.CompressFormat.JPEG, 95, out);
                 out.flush();
                 out.close();
 
                 String savedPath = outputFile.getAbsolutePath();
                 Log.d(TAG, "Image saved: " + savedPath);
 
-                // Save to database
-                Document document = new Document();
-                document.setDocumentName(outputFile.getName());
-                document.setFilePath(savedPath);
-                document.setCreatedAt(System.currentTimeMillis());
-                document.setFileSize(outputFile.length());
-                document.setPageCount(1);
-                document.setFileType("IMAGE");
-                // Note: Filter name can be stored in description or notes
-                document.setDescription("Filter: " + currentFilter.getDisplayName());
+                if (editMode && documentId != -1) {
+                    // Update existing document in database
+                    repository.getDocumentByIdSync(documentId, document -> {
+                        if (document != null) {
+                            document.setFileSize(outputFile.length());
+                            document.setModifiedAt(System.currentTimeMillis());
+                            document.setDescription("Filter: " + currentFilter.getDisplayName());
+                            repository.update(document, success -> {
+                                Log.d(TAG, "Document updated in database: " + success);
+                            });
+                        }
+                    });
+                } else {
+                    // Save new document to database
+                    Document document = new Document();
+                    document.setDocumentName(outputFile.getName());
+                    document.setFilePath(savedPath);
+                    document.setCreatedAt(System.currentTimeMillis());
+                    document.setFileSize(outputFile.length());
+                    document.setPageCount(1);
+                    document.setFileType("IMAGE");
+                    document.setDescription("Filter: " + currentFilter.getDisplayName());
 
-                repository.insert(document, success -> {
-                    Log.d(TAG, "Document saved to database: " + success);
-                });
+                    repository.insert(document, success -> {
+                        Log.d(TAG, "Document saved to database: " + success);
+                    });
+                }
 
                 // Always set result with saved path for activities that need it
                 Intent resultIntent = new Intent();
                 resultIntent.putExtra("saved_image_path", savedPath);
+                resultIntent.putExtra("updated", editMode);
                 setResult(RESULT_OK, resultIntent);
 
                 Log.d(TAG, "=== RESULT SET ===");
                 Log.d(TAG, "setResult called with RESULT_OK");
                 Log.d(TAG, "saved_image_path: " + savedPath);
+                Log.d(TAG, "edit_mode: " + editMode);
                 Log.d(TAG, "==================");
 
                 runOnUiThread(() -> {
                     showProgress(false, null);
+
+                    // Check if we're in edit mode
+                    if (editMode) {
+                        // Edit mode: Just return success
+                        Toast.makeText(this, "✓ Document updated successfully!", Toast.LENGTH_SHORT).show();
+                        finish();
+                        return;
+                    }
 
                     // Check if we're in multi-page mode
                     boolean multiPageMode = getIntent().getBooleanExtra("multi_page_mode", false);

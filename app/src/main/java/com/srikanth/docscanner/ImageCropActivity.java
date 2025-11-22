@@ -45,6 +45,8 @@ public class ImageCropActivity extends AppCompatActivity {
     private MaterialButton btnAutoDetect;
     private ProgressBar progressBar;
     private TextView tvStatus;
+    private com.google.android.material.card.MaterialCardView cardQualityScore;
+    private TextView tvQualityScore;
 
     // Data
     private String imagePath;
@@ -79,6 +81,84 @@ public class ImageCropActivity extends AppCompatActivity {
 
         // Initialize repository
         repository = DocumentRepository.getInstance(this);
+
+        // Check if auto-detect was already performed
+        checkAutoDetectResults();
+    }
+
+    /**
+     * Check if auto-detect was already performed and apply results
+     */
+    private void checkAutoDetectResults() {
+        boolean autoDetectCompleted = getIntent().getBooleanExtra("auto_detect_completed", false);
+
+        if (autoDetectCompleted) {
+            boolean detectionSuccess = getIntent().getBooleanExtra("detection_success", false);
+            float qualityScore = getIntent().getFloatExtra("quality_score", 0f);
+            float[] cornerArray = getIntent().getFloatArrayExtra("detected_corners");
+
+            if (detectionSuccess && cornerArray != null && cornerArray.length == 8) {
+                // Convert corner array to PointF array
+                android.graphics.PointF[] corners = new android.graphics.PointF[4];
+                for (int i = 0; i < 4; i++) {
+                    corners[i] = new android.graphics.PointF(
+                        cornerArray[i * 2],
+                        cornerArray[i * 2 + 1]
+                    );
+                }
+
+                // Wait for image to load, then set corners
+                cropOverlayView.post(() -> {
+                    cropOverlayView.setCorners(corners);
+
+                    // Show quality score badge
+                    showQualityScore(qualityScore);
+
+                    // Show toast
+                    String scoreText = String.format(java.util.Locale.US, "✨ Auto-detected! Quality: %.1f/10", qualityScore);
+                    Toast.makeText(this, scoreText, Toast.LENGTH_LONG).show();
+
+                    // Update button text to show it was auto-detected
+                    btnAutoDetect.setText("🔄 Re-detect");
+                });
+            } else {
+                // Detection failed, show message
+                Toast.makeText(this, "⚠️ Auto-detection failed. Please adjust corners manually.", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    /**
+     * Show quality score badge with color coding
+     */
+    private void showQualityScore(float score) {
+        tvQualityScore.setText(String.format(java.util.Locale.US, "Quality: %.1f/10", score));
+
+        // Color code based on quality
+        int backgroundColor;
+        if (score >= 8.0f) {
+            backgroundColor = 0xCC4CAF50; // Green - Excellent
+        } else if (score >= 6.0f) {
+            backgroundColor = 0xCCFFC107; // Yellow - Good
+        } else if (score >= 4.0f) {
+            backgroundColor = 0xCCFF9800; // Orange - Fair
+        } else {
+            backgroundColor = 0xCCF44336; // Red - Poor
+        }
+
+        cardQualityScore.setCardBackgroundColor(backgroundColor);
+        cardQualityScore.setVisibility(View.VISIBLE);
+
+        // Animate entrance
+        cardQualityScore.setAlpha(0f);
+        cardQualityScore.setScaleX(0.8f);
+        cardQualityScore.setScaleY(0.8f);
+        cardQualityScore.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(300)
+            .start();
     }
 
     /**
@@ -92,10 +172,15 @@ public class ImageCropActivity extends AppCompatActivity {
         btnAutoDetect = findViewById(R.id.btnAutoDetect);
         progressBar = findViewById(R.id.progressBar);
         tvStatus = findViewById(R.id.tvStatus);
+        cardQualityScore = findViewById(R.id.cardQualityScore);
+        tvQualityScore = findViewById(R.id.tvQualityScore);
 
         // Initially hide progress
         progressBar.setVisibility(View.GONE);
         tvStatus.setVisibility(View.GONE);
+
+        // Initially hide quality score badge
+        cardQualityScore.setVisibility(View.GONE);
     }
 
     /**
@@ -198,19 +283,22 @@ public class ImageCropActivity extends AppCompatActivity {
                     // Update UI with detected corners
                     runOnUiThread(() -> {
                         cropOverlayView.setCorners(edgeResult.corners);
-                        showProgress(true, "✓ Edges detected! Enhancing image...");
+                        showProgress(false, null);
+                        setButtonsEnabled(true);
+
+                        // Show quality score badge
+                        showQualityScore(edgeResult.qualityScore);
+
+                        // Show success toast
+                        Toast.makeText(this,
+                            String.format(java.util.Locale.US, "✨ Edges detected! Quality: %.1f/10", edgeResult.qualityScore),
+                            Toast.LENGTH_LONG).show();
+
+                        // Update button text
+                        btnAutoDetect.setText("🔄 Re-detect");
                     });
 
-                    // Step 2: Apply perspective correction
-                    Bitmap croppedBitmap = AutoDocumentProcessor.applyCropWithPerspective(
-                        originalBitmap, edgeResult.corners);
-
-                    // Step 3: Apply auto-enhancement
-                    Bitmap enhancedBitmap = AutoDocumentProcessor.enhanceBitmap(
-                        croppedBitmap, AutoDocumentProcessor.EnhancementType.AUTO_ENHANCE);
-
-                    // Step 4: Save the processed image
-                    saveAutoProcessedImage(enhancedBitmap, edgeResult.qualityScore);
+                    return; // Don't auto-save, let user review
 
                 } else {
                     // No edges detected, show error
@@ -409,38 +497,75 @@ public class ImageCropActivity extends AppCompatActivity {
      */
     private void saveCroppedImage(Bitmap croppedBitmap) {
         try {
-            // Generate output filename
-            String timestamp = new SimpleDateFormat(FILENAME_FORMAT, Locale.US)
-                    .format(new Date());
-            File outputFile = new File(outputDirectory, "CROPPED_" + timestamp + ".jpg");
+            // Check if we're in edit mode
+            boolean editMode = getIntent().getBooleanExtra("edit_mode", false);
+            int documentId = getIntent().getIntExtra("document_id", -1);
+
+            File outputFile;
+
+            if (editMode && documentId != -1) {
+                // Edit mode: Update the existing file
+                outputFile = new File(imagePath);
+                Log.d(TAG, "Edit mode: Updating existing file: " + outputFile.getAbsolutePath());
+            } else {
+                // New crop: Create new file
+                String timestamp = new SimpleDateFormat(FILENAME_FORMAT, Locale.US)
+                        .format(new Date());
+                outputFile = new File(outputDirectory, "CROPPED_" + timestamp + ".jpg");
+                Log.d(TAG, "New crop: Creating file: " + outputFile.getAbsolutePath());
+            }
 
             // Save bitmap
             FileOutputStream out = new FileOutputStream(outputFile);
-            croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+            croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 95, out);
             out.flush();
             out.close();
 
             Log.d(TAG, "Cropped image saved: " + outputFile.getAbsolutePath());
 
-            // Save to database
-            Document document = new Document();
-            document.setDocumentName(outputFile.getName());
-            document.setFilePath(outputFile.getAbsolutePath());
-            document.setCreatedAt(System.currentTimeMillis());
-            document.setFileSize(outputFile.length());
-            document.setPageCount(1);
-            document.setFileType("IMAGE");
-            document.setDescription("Cropped image");
+            if (editMode && documentId != -1) {
+                // Update existing document in database
+                repository.getDocumentByIdSync(documentId, document -> {
+                    if (document != null) {
+                        document.setFileSize(outputFile.length());
+                        document.setModifiedAt(System.currentTimeMillis());
+                        repository.update(document, success -> {
+                            Log.d(TAG, "Document updated in database: " + success);
+                        });
+                    }
+                });
+            } else {
+                // Save new document to database
+                Document document = new Document();
+                document.setDocumentName(outputFile.getName());
+                document.setFilePath(outputFile.getAbsolutePath());
+                document.setCreatedAt(System.currentTimeMillis());
+                document.setFileSize(outputFile.length());
+                document.setPageCount(1);
+                document.setFileType("IMAGE");
+                document.setDescription("Cropped image");
 
-            repository.insert(document, success -> {
-                Log.d(TAG, "Cropped document saved to database: " + success);
-            });
+                repository.insert(document, success -> {
+                    Log.d(TAG, "Cropped document saved to database: " + success);
+                });
+            }
 
             // Return result
             runOnUiThread(() -> {
                 showProgress(false, null);
 
                 String croppedPath = outputFile.getAbsolutePath();
+
+                // Check if we're in edit mode
+                if (editMode) {
+                    // Edit mode: Just return success
+                    Toast.makeText(this, "✓ Document updated successfully!", Toast.LENGTH_SHORT).show();
+                    Intent resultIntent = new Intent();
+                    resultIntent.putExtra("updated", true);
+                    setResult(RESULT_OK, resultIntent);
+                    finish();
+                    return;
+                }
 
                 // Check if we're in multi-page mode
                 boolean multiPageMode = getIntent().getBooleanExtra("multi_page_mode", false);
