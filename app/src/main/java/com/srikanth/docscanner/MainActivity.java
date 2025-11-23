@@ -41,8 +41,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Initialize OpenCV for image processing (uncomment when OpenCV is added)
-        // OpenCVHelper.initOpenCV(this);
+        // Initialize OpenCV for image processing
+        if (!org.opencv.android.OpenCVLoader.initDebug()) {
+            android.util.Log.e("MainActivity", "OpenCV initialization failed!");
+            Toast.makeText(this, "Failed to initialize OpenCV", Toast.LENGTH_SHORT).show();
+        } else {
+            android.util.Log.d("MainActivity", "OpenCV initialized successfully");
+        }
 
         // Initialize UI components
         initializeViews();

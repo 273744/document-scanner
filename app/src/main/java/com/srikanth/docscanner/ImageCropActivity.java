@@ -82,7 +82,7 @@ public class ImageCropActivity extends AppCompatActivity {
         // Initialize repository
         repository = DocumentRepository.getInstance(this);
 
-        // Check if auto-detect was already performed
+        // Check if auto-detect was already performed or should be triggered
         checkAutoDetectResults();
     }
 
@@ -90,6 +90,17 @@ public class ImageCropActivity extends AppCompatActivity {
      * Check if auto-detect was already performed and apply results
      */
     private void checkAutoDetectResults() {
+        // Check if auto-detect should run on load
+        boolean autoDetectOnLoad = getIntent().getBooleanExtra("auto_detect_on_load", false);
+        if (autoDetectOnLoad && originalBitmap != null) {
+            // Trigger auto-detect after a short delay to let UI settle
+            cropOverlayView.postDelayed(() -> {
+                autoDetectAndEnhance();
+            }, 300);
+            return;
+        }
+
+        // Check if auto-detect was already completed (from older flow)
         boolean autoDetectCompleted = getIntent().getBooleanExtra("auto_detect_completed", false);
 
         if (autoDetectCompleted) {

@@ -421,69 +421,22 @@ public class CameraActivity extends AppCompatActivity {
         // Check if we're in multi-page mode
         boolean multiPageMode = getIntent().getBooleanExtra("multi_page_mode", false);
 
-        // Show progress dialog
-        android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(this);
-        progressDialog.setMessage("🤖 Auto-detecting edges...");
-        progressDialog.setCancelable(false);
-        progressDialog.show();
+        // Show simple toast for now - progress will show in ImageCropActivity
+        Toast.makeText(this, "🤖 Processing...", Toast.LENGTH_SHORT).show();
 
-        // Process in background thread
-        new Thread(() -> {
-            try {
-                // Load bitmap
-                Bitmap bitmap = BitmapFactory.decodeFile(capturedFile.getAbsolutePath());
+        // For now, skip auto-detection on capture and let ImageCropActivity handle it
+        // This avoids context issues and keeps the flow simpler
+        Intent intent = new Intent(CameraActivity.this, ImageCropActivity.class);
+        intent.putExtra("image_path", capturedFile.getAbsolutePath());
+        intent.putExtra("auto_detect_on_load", true);  // Signal to auto-detect when activity loads
 
-                if (bitmap == null) {
-                    runOnUiThread(() -> {
-                        progressDialog.dismiss();
-                        showManualOptions(capturedFile);
-                    });
-                    return;
-                }
+        if (multiPageMode) {
+            intent.putExtra("multi_page_mode", true);
+            int currentPageCount = getIntent().getIntExtra("current_page_count", 0);
+            intent.putExtra("page_number", currentPageCount + 1);
+        }
 
-                // Detect edges
-                AutoDocumentProcessor.EdgeDetectionResult result =
-                    AutoDocumentProcessor.detectEdges(bitmap);
-
-                // Dismiss progress dialog
-                runOnUiThread(() -> {
-                    progressDialog.dismiss();
-
-                    // Navigate to ImageCropActivity with auto-detected corners
-                    Intent intent = new Intent(this, ImageCropActivity.class);
-                    intent.putExtra("image_path", capturedFile.getAbsolutePath());
-                    intent.putExtra("auto_detect_completed", true);
-                    intent.putExtra("quality_score", result.qualityScore);
-                    intent.putExtra("detection_success", result.success);
-
-                    // Pass detected corners if successful
-                    if (result.success && result.corners != null) {
-                        float[] cornerArray = new float[8]; // 4 corners x 2 coordinates
-                        for (int i = 0; i < 4; i++) {
-                            cornerArray[i * 2] = result.corners[i].x;
-                            cornerArray[i * 2 + 1] = result.corners[i].y;
-                        }
-                        intent.putExtra("detected_corners", cornerArray);
-                    }
-
-                    if (multiPageMode) {
-                        intent.putExtra("multi_page_mode", true);
-                        int currentPageCount = getIntent().getIntExtra("current_page_count", 0);
-                        intent.putExtra("page_number", currentPageCount + 1);
-                    }
-
-                    startActivityForResult(intent, REQUEST_PREVIEW);
-                });
-
-            } catch (Exception e) {
-                Log.e(TAG, "Error in auto-detection", e);
-                runOnUiThread(() -> {
-                    progressDialog.dismiss();
-                    Toast.makeText(this, "Detection failed, showing manual options", Toast.LENGTH_SHORT).show();
-                    showManualOptions(capturedFile);
-                });
-            }
-        }).start();
+        startActivityForResult(intent, REQUEST_PREVIEW);
     }
 
     /**
